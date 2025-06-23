@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ff8.infrastructure.adapters.primary.ui.controllers.GFCompatibilityController" fitToWidth="true">
+   <VBox spacing="20" styleClass="content-panel">
+      <TitledPane text="GFs Compatibility" expanded="true" collapsible="false" textFill="DARKCYAN">
+         <GridPane hgap="20" vgap="15" styleClass="form-grid">
+            <columnConstraints>
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="80" />
+            </columnConstraints>
+            
+            <!-- Row 1 -->
+            <Label text="Quezacotl" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <Spinner fx:id="quezacotlSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="Shiva" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <Spinner fx:id="shivaSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="Ifrit" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+            <Spinner fx:id="ifritSpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="Siren" GridPane.columnIndex="6" GridPane.rowIndex="0" />
+            <Spinner fx:id="sirenSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <!-- Row 2 -->
+            <Label text="Brothers" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <Spinner fx:id="brothersSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="Diablos" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <Spinner fx:id="diablosSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="Carbuncle" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+            <Spinner fx:id="carbuncleSpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="Leviathan" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+            <Spinner fx:id="leviathanSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <!-- Row 3 -->
+            <Label text="Pandemona" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+            <Spinner fx:id="pandemonaSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="2" maxWidth="80" />
+            
+            <Label text="Cerberus" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+            <Spinner fx:id="cerberusSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="2" maxWidth="80" />
+            
+            <Label text="Alexander" GridPane.columnIndex="4" GridPane.rowIndex="2" />
+            <Spinner fx:id="alexanderSpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="2" maxWidth="80" />
+            
+            <Label text="Doomtrain" GridPane.columnIndex="6" GridPane.rowIndex="2" />
+            <Spinner fx:id="doomtrainSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="2" maxWidth="80" />
+            
+            <!-- Row 4 -->
+            <Label text="Bahamut" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+            <Spinner fx:id="bahamutSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="3" maxWidth="80" />
+            
+            <Label text="Cactuar" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+            <Spinner fx:id="cactuarSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="3" maxWidth="80" />
+            
+            <Label text="Tonberry" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+            <Spinner fx:id="tonberrySpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="3" maxWidth="80" />
+            
+            <Label text="Eden" GridPane.columnIndex="6" GridPane.rowIndex="3" />
+            <Spinner fx:id="edenSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="3" maxWidth="80" />
+         </GridPane>
+      </TitledPane>
+   </VBox>
+</ScrollPane> 

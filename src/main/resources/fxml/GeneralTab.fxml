@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ff8.infrastructure.adapters.primary.ui.controllers.GeneralTabController" fitToWidth="true">
+   <VBox spacing="10" styleClass="content-panel">
+      <TitledPane text="General" expanded="true" collapsible="false">
+         <GridPane hgap="20" vgap="10" styleClass="form-grid">
+            <columnConstraints>
+               <ColumnConstraints minWidth="100" />
+               <ColumnConstraints minWidth="150" />
+               <ColumnConstraints minWidth="100" />
+               <ColumnConstraints minWidth="150" />
+            </columnConstraints>
+            
+            <!-- Row 1 -->
+            <Label text="Magic ID" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <ComboBox fx:id="magicIdComboBox" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="200" />
+            
+            <Label text="Element" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <ComboBox fx:id="elementComboBox" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="150" />
+            
+            <!-- Row 1.5 - Spell Name and Description (readonly) -->
+            <Label text="Spell Name" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <TextField fx:id="spellNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="false" styleClass="readonly-field" />
+            
+            <Label text="Spell Description" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <TextField fx:id="spellDescriptionField" GridPane.columnIndex="3" GridPane.rowIndex="1" editable="false" styleClass="readonly-field" />
+            
+            <!-- Row 2 -->
+            <Label text="Attack Type" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+            <ComboBox fx:id="attackTypeComboBox" GridPane.columnIndex="1" GridPane.rowIndex="2" maxWidth="200" />
+            
+            <!-- Row 3 - Three columns layout -->
+            <GridPane GridPane.columnIndex="0" GridPane.rowIndex="3" GridPane.columnSpan="4" hgap="30" vgap="10">
+               <columnConstraints>
+                  <ColumnConstraints minWidth="120" />
+                  <ColumnConstraints minWidth="120" />
+                  <ColumnConstraints minWidth="120" />
+               </columnConstraints>
+               
+               <VBox GridPane.columnIndex="0" GridPane.rowIndex="0" spacing="5">
+                  <Label text="Power" />
+                  <Spinner fx:id="spellPowerSpinner" editable="true" maxWidth="80" />
+               </VBox>
+               
+               <VBox GridPane.columnIndex="1" GridPane.rowIndex="0" spacing="5">
+                  <Label text="Draw Resist" />
+                  <Spinner fx:id="drawResistSpinner" editable="true" maxWidth="80" />
+               </VBox>
+               
+               <VBox GridPane.columnIndex="2" GridPane.rowIndex="0" spacing="5">
+                  <Label text="Hit Count" />
+                  <Spinner fx:id="hitCountSpinner" editable="true" maxWidth="80" />
+               </VBox>
+            </GridPane>
+            
+                         <!-- Row 4 - Buttons -->
+             <HBox GridPane.columnIndex="0" GridPane.rowIndex="4" GridPane.columnSpan="4" spacing="20" alignment="CENTER_LEFT">
+                <Button fx:id="damageFormulaButton" text="Damage Formula" onAction="#onDamageFormulaClick" />
+                <Button fx:id="damageChartButton" text="Damage Chart" onAction="#onDamageChartClick" />
+             </HBox>
+         </GridPane>
+      </TitledPane>
+      
+      <TitledPane text="Target Info" expanded="true" collapsible="false">
+         <GridPane hgap="15" vgap="10" styleClass="form-grid">
+            <columnConstraints>
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="80" />
+            </columnConstraints>
+            
+            <!-- Row 1 -->
+            <CheckBox fx:id="targetDeadCheckBox" text="Dead" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <CheckBox fx:id="targetUnknown1CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <CheckBox fx:id="targetUnknown2CheckBox" text="???" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <CheckBox fx:id="targetSingleSideCheckBox" text="Single Side" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+            
+            <!-- Row 2 -->
+            <CheckBox fx:id="targetSingleCheckBox" text="Single" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <CheckBox fx:id="targetUnknown3CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <CheckBox fx:id="targetEnemyCheckBox" text="Enemy" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <CheckBox fx:id="targetUnknown4CheckBox" text="???" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+         </GridPane>
+      </TitledPane>
+      
+      <TitledPane text="Status Attack" expanded="true" collapsible="false">
+         <VBox spacing="10">
+            <HBox spacing="10" alignment="CENTER_LEFT">
+               <Label text="Status Attack" />
+               <Spinner fx:id="statusAttackSpinner" editable="true" maxWidth="80" />
+            </HBox>
+            
+            <GridPane hgap="15" vgap="8" styleClass="form-grid">
+               <columnConstraints>
+                  <ColumnConstraints minWidth="90" />
+                  <ColumnConstraints minWidth="90" />
+                  <ColumnConstraints minWidth="90" />
+                  <ColumnConstraints minWidth="90" />
+                  <ColumnConstraints minWidth="90" />
+                  <ColumnConstraints minWidth="90" />
+               </columnConstraints>
+               
+               <!-- Row 1 -->
+               <CheckBox fx:id="statusSleepCheckBox" text="Sleep" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+               <CheckBox fx:id="statusHasteCheckBox" text="Haste" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+               <CheckBox fx:id="statusSlowCheckBox" text="Slow" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+               <CheckBox fx:id="statusStopCheckBox" text="Stop" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+               <CheckBox fx:id="statusRegenCheckBox" text="Regen" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+               
+               <!-- Row 2 -->
+               <CheckBox fx:id="statusProtectCheckBox" text="Protect" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+               <CheckBox fx:id="statusShellCheckBox" text="Shell" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+               <CheckBox fx:id="statusReflectCheckBox" text="Reflect" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+               <CheckBox fx:id="statusAuraCheckBox" text="Aura" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+               <CheckBox fx:id="statusCurseCheckBox" text="Curse" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+               
+               <!-- Row 3 -->
+               <CheckBox fx:id="statusDoomCheckBox" text="Doom" GridPane.columnIndex="0" GridPane.rowIndex="2" />
+               <CheckBox fx:id="statusInvincibleCheckBox" text="Invincible" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+               <CheckBox fx:id="statusFloatCheckBox" text="Float" GridPane.columnIndex="2" GridPane.rowIndex="2" />
+               <CheckBox fx:id="statusPetrifyingCheckBox" text="Petrifying" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+               <CheckBox fx:id="statusConfusionCheckBox" text="Confusion" GridPane.columnIndex="4" GridPane.rowIndex="2" />
+               
+               <!-- Row 4 -->
+               <CheckBox fx:id="statusDrainCheckBox" text="Drain" GridPane.columnIndex="0" GridPane.rowIndex="3" />
+               <CheckBox fx:id="statusEjectCheckBox" text="Eject" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+               <CheckBox fx:id="statusDoubleCheckBox" text="Double" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+               <CheckBox fx:id="statusTripleCheckBox" text="Triple" GridPane.columnIndex="3" GridPane.rowIndex="3" />
+               <CheckBox fx:id="statusDefendCheckBox" text="Defend" GridPane.columnIndex="4" GridPane.rowIndex="3" />
+               
+               <!-- Row 5 -->
+               <CheckBox fx:id="statusUnknown1CheckBox" text="???" GridPane.columnIndex="0" GridPane.rowIndex="4" />
+               <CheckBox fx:id="statusUnknown2CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+               <CheckBox fx:id="statusChargedCheckBox" text="Charged" GridPane.columnIndex="2" GridPane.rowIndex="4" />
+               <CheckBox fx:id="statusBackAttackCheckBox" text="Back Attack" GridPane.columnIndex="3" GridPane.rowIndex="4" />
+               <CheckBox fx:id="statusVit0CheckBox" text="Vit0" GridPane.columnIndex="4" GridPane.rowIndex="4" />
+               
+               <!-- Row 6 -->
+               <CheckBox fx:id="statusAngelWingCheckBox" text="Angel Wing" GridPane.columnIndex="0" GridPane.rowIndex="5" />
+               <CheckBox fx:id="statusUnknown3CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+               <CheckBox fx:id="statusUnknown4CheckBox" text="???" GridPane.columnIndex="2" GridPane.rowIndex="5" />
+               <CheckBox fx:id="statusUnknown5CheckBox" text="???" GridPane.columnIndex="3" GridPane.rowIndex="5" />
+               <CheckBox fx:id="statusUnknown6CheckBox" text="???" GridPane.columnIndex="4" GridPane.rowIndex="5" />
+               
+               <!-- Row 7 -->
+               <CheckBox fx:id="statusHasMagicCheckBox" text="Has Magic" GridPane.columnIndex="0" GridPane.rowIndex="6" />
+               <CheckBox fx:id="statusSummonGFCheckBox" text="Summon GF" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+               <CheckBox fx:id="statusDeathCheckBox" text="Death" GridPane.columnIndex="2" GridPane.rowIndex="6" />
+               <CheckBox fx:id="statusPoisonCheckBox" text="Poison" GridPane.columnIndex="3" GridPane.rowIndex="6" />
+               <CheckBox fx:id="statusPetrifyCheckBox" text="Petrify" GridPane.columnIndex="4" GridPane.rowIndex="6" />
+               
+               <!-- Row 8 -->
+               <CheckBox fx:id="statusDarknessCheckBox" text="Darkness" GridPane.columnIndex="0" GridPane.rowIndex="7" />
+               <CheckBox fx:id="statusSilenceCheckBox" text="Silence" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+               <CheckBox fx:id="statusBerserkCheckBox" text="Berserk" GridPane.columnIndex="2" GridPane.rowIndex="7" />
+               <CheckBox fx:id="statusZombieCheckBox" text="Zombie" GridPane.columnIndex="3" GridPane.rowIndex="7" />
+               <CheckBox fx:id="statusUnknown7CheckBox" text="???" GridPane.columnIndex="4" GridPane.rowIndex="7" />
+            </GridPane>
+         </VBox>
+      </TitledPane>
+      
+      <TitledPane text="Attack Flags" expanded="true" collapsible="false">
+         <GridPane hgap="15" vgap="10" styleClass="form-grid">
+            <columnConstraints>
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="120" />
+               <ColumnConstraints minWidth="120" />
+            </columnConstraints>
+            
+            <!-- Row 1 -->
+            <CheckBox fx:id="attackShelledCheckBox" text="Shelled" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <CheckBox fx:id="attackUnknown1CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+            <CheckBox fx:id="attackUnknown2CheckBox" text="???" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <CheckBox fx:id="attackBreakDamageLimitCheckBox" text="Break Damage Limit" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+            
+            <!-- Row 2 -->
+            <CheckBox fx:id="attackReflectedCheckBox" text="Reflected" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <CheckBox fx:id="attackUnknown3CheckBox" text="???" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <CheckBox fx:id="attackUnknown4CheckBox" text="???" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <CheckBox fx:id="attackReviveCheckBox" text="Revive?" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+         </GridPane>
+      </TitledPane>
+   </VBox>
+</ScrollPane> 

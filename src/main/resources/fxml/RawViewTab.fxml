@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ff8.infrastructure.adapters.primary.ui.controllers.RawViewTabController" spacing="10" styleClass="content-panel">
+   <TitledPane text="Raw Binary Data View" expanded="true" collapsible="false" textFill="ORANGE">
+      <VBox spacing="10">
+         <Label fx:id="statusLabel" text="No magic data selected" styleClass="status-label" />
+         
+         <TableView fx:id="rawDataTable" prefHeight="500" styleClass="raw-view-table">
+            <columns>
+               <TableColumn fx:id="offsetColumn" text="Offset" prefWidth="100" />
+               <TableColumn fx:id="typeColumn" text="Type" prefWidth="80" />
+               <TableColumn fx:id="nameColumn" text="Name" prefWidth="200" />
+               <TableColumn fx:id="valueColumn" text="Value" prefWidth="100" />
+            </columns>
+            <columnResizePolicy>
+               <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+         </TableView>
+         
+         <Label text="Double-click any row to see detailed information including decimal and binary values." 
+                styleClass="help-text" />
+      </VBox>
+   </TitledPane>
+</VBox> 

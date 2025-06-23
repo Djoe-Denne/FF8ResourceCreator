@@ -1,0 +1,211 @@
+package com.ff8.application.dto;
+
+import com.ff8.domain.entities.enums.AttackType;
+import com.ff8.domain.entities.enums.Element;
+import com.ff8.domain.entities.enums.StatusEffect;
+import com.ff8.domain.entities.enums.GF;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Data Transfer Object for magic data display in UI.
+ * Uses Java 21 records for immutability and conciseness.
+ */
+public record MagicDisplayDTO(
+        // Index properties - unique identifier
+        int index,  // Position in kernel file (unique identifier)
+        
+        // Basic properties
+        int magicID,
+        String spellName,  // This is the extracted spell name from binary
+        String spellDescription,  // This is the extracted spell description from binary
+        int spellPower,
+        Element element,
+        AttackType attackType,
+        int drawResist,
+        int hitCount,
+        
+        // Status attack enabler
+        int statusAttackEnabler,
+        
+        // Target and attack properties
+        TargetInfo targetInfo,
+        AttackInfo attackInfo,
+        
+        // Status effects
+        List<StatusEffect> activeStatusEffects,
+        
+        // Junction bonuses
+        JunctionStatsDTO junctionStats,
+        JunctionElementalDTO junctionElemental,
+        JunctionStatusDTO junctionStatus,
+        GFCompatibilityDTO gfCompatibility,
+        
+        // Metadata
+        boolean hasStatusEffects,
+        boolean hasJunctionBonuses,
+        boolean isCurative,
+        boolean isModified
+) {
+    /**
+     * Record for target information
+     */
+    public record TargetInfo(
+            boolean dead,
+            boolean single,
+            boolean enemy,
+            boolean singleSide,
+            List<Integer> activeBits
+    ) {}
+
+    /**
+     * Record for attack information
+     */
+    public record AttackInfo(
+            boolean shelled,
+            boolean reflected,
+            boolean breakDamageLimit,
+            boolean revive,
+            List<Integer> activeBits
+    ) {}
+
+    /**
+     * Validation method for the DTO
+     */
+    public List<String> validate() {
+        var errors = new java.util.ArrayList<String>();
+        
+        if (index < 0) {
+            errors.add("Index must be non-negative");
+        }
+        
+        if (magicID < 0 || magicID > 255) {
+            errors.add("Magic ID must be between 0 and 255");
+        }
+        
+        if (spellPower < 0 || spellPower > 255) {
+            errors.add("Spell power must be between 0 and 255");
+        }
+        
+        if (hitCount < 0 || hitCount > 255) {
+            errors.add("Hit count must be between 0 and 255");
+        }
+        
+        if (drawResist < 0 || drawResist > 255) {
+            errors.add("Draw resist must be between 0 and 255");
+        }
+        
+        if (spellName == null || spellName.trim().isEmpty()) {
+            errors.add("Spell name cannot be empty");
+        }
+        
+        if (element == null) {
+            errors.add("Element cannot be null");
+        }
+        
+        if (attackType == null) {
+            errors.add("Attack type cannot be null");
+        }
+        
+        return errors;
+    }
+
+    /**
+     * Check if this DTO is valid
+     */
+    public boolean isValid() {
+        return validate().isEmpty();
+    }
+
+    /**
+     * Create a copy with modified spell power
+     */
+    public MagicDisplayDTO withSpellPower(int newPower) {
+        return new MagicDisplayDTO(
+                index, magicID, spellName, spellDescription, newPower, element, attackType, drawResist, hitCount,
+                statusAttackEnabler, targetInfo, attackInfo, activeStatusEffects, junctionStats, junctionElemental,
+                junctionStatus, gfCompatibility, hasStatusEffects, hasJunctionBonuses,
+                isCurative, true // Mark as modified
+        );
+    }
+
+    /**
+     * Create a copy with modified element
+     */
+    public MagicDisplayDTO withElement(Element newElement) {
+        return new MagicDisplayDTO(
+                index, magicID, spellName, spellDescription, spellPower, newElement, attackType, drawResist, hitCount,
+                statusAttackEnabler, targetInfo, attackInfo, activeStatusEffects, junctionStats, junctionElemental,
+                junctionStatus, gfCompatibility, hasStatusEffects, hasJunctionBonuses,
+                isCurative, true // Mark as modified
+        );
+    }
+
+    /**
+     * Create a copy with modified status effects
+     */
+    public MagicDisplayDTO withStatusEffects(List<StatusEffect> newStatusEffects) {
+        return new MagicDisplayDTO(
+                index, magicID, spellName, spellDescription, spellPower, element, attackType, drawResist, hitCount,
+                statusAttackEnabler, targetInfo, attackInfo, newStatusEffects, junctionStats, junctionElemental,
+                junctionStatus, gfCompatibility, !newStatusEffects.isEmpty(), hasJunctionBonuses,
+                isCurative, true // Mark as modified
+        );
+    }
+
+    /**
+     * Create a copy with modified target info
+     */
+    public MagicDisplayDTO withTargetInfo(TargetInfo newTargetInfo) {
+        return new MagicDisplayDTO(
+                index, magicID, spellName, spellDescription, spellPower, element, attackType, drawResist, hitCount,
+                statusAttackEnabler, newTargetInfo, attackInfo, activeStatusEffects, junctionStats, junctionElemental,
+                junctionStatus, gfCompatibility, hasStatusEffects, hasJunctionBonuses,
+                isCurative, true // Mark as modified
+        );
+    }
+
+    /**
+     * Create a copy with modified junction stats
+     */
+    public MagicDisplayDTO withJunctionStats(JunctionStatsDTO newJunctionStats) {
+        boolean hasJunctionBonuses = newJunctionStats.hasAnyBonuses() ||
+                                   junctionElemental.hasAnyEffects() ||
+                                   junctionStatus.hasAnyEffects() ||
+                                   gfCompatibility.hasAnyGoodCompatibilities();
+        
+        return new MagicDisplayDTO(
+                index, magicID, spellName, spellDescription, spellPower, element, attackType, drawResist, hitCount,
+                statusAttackEnabler, targetInfo, attackInfo, activeStatusEffects, newJunctionStats, junctionElemental,
+                junctionStatus, gfCompatibility, hasStatusEffects, hasJunctionBonuses,
+                isCurative, true // Mark as modified
+        );
+    }
+
+    /**
+     * Get display summary for UI
+     */
+    public String getDisplaySummary() {
+        var summary = new StringBuilder();
+        summary.append(spellName).append(" (Index: ").append(index).append(", ID: ").append(magicID).append(")");
+        
+        if (spellPower > 0) {
+            summary.append(" - Power: ").append(spellPower);
+        }
+        
+        if (element != Element.NONE) {
+            summary.append(" - ").append(element.getDisplayName());
+        }
+        
+        if (hasStatusEffects) {
+            summary.append(" - Status Effects: ").append(activeStatusEffects.size());
+        }
+        
+        if (hasJunctionBonuses) {
+            summary.append(" - Junction Bonuses");
+        }
+        
+        return summary.toString();
+    }
+} 

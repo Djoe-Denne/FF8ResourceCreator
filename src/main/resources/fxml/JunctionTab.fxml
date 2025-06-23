@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ff8.infrastructure.adapters.primary.ui.controllers.JunctionTabController" fitToWidth="true">
+   <VBox spacing="20" styleClass="content-panel">
+      <TitledPane text="Junction Stats" expanded="true" collapsible="false" textFill="RED">
+         <GridPane hgap="20" vgap="15" styleClass="form-grid">
+            <columnConstraints>
+               <ColumnConstraints minWidth="60" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="60" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="60" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="60" />
+               <ColumnConstraints minWidth="80" />
+               <ColumnConstraints minWidth="60" />
+               <ColumnConstraints minWidth="80" />
+            </columnConstraints>
+            
+            <!-- Row 1 -->
+            <Label text="HP" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+            <Spinner fx:id="hpJunctionSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="STR" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+            <Spinner fx:id="strJunctionSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="VIT" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+            <Spinner fx:id="vitJunctionSpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="MAG" GridPane.columnIndex="6" GridPane.rowIndex="0" />
+            <Spinner fx:id="magJunctionSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <Label text="SPR" GridPane.columnIndex="8" GridPane.rowIndex="0" />
+            <Spinner fx:id="sprJunctionSpinner" editable="true" GridPane.columnIndex="9" GridPane.rowIndex="0" maxWidth="80" />
+            
+            <!-- Row 2 -->
+            <Label text="SPD" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+            <Spinner fx:id="spdJunctionSpinner" editable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="EVA" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+            <Spinner fx:id="evaJunctionSpinner" editable="true" GridPane.columnIndex="3" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="HIT" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+            <Spinner fx:id="hitJunctionSpinner" editable="true" GridPane.columnIndex="5" GridPane.rowIndex="1" maxWidth="80" />
+            
+            <Label text="LUCK" GridPane.columnIndex="6" GridPane.rowIndex="1" />
+            <Spinner fx:id="luckJunctionSpinner" editable="true" GridPane.columnIndex="7" GridPane.rowIndex="1" maxWidth="80" />
+         </GridPane>
+      </TitledPane>
+      
+      <TitledPane text="Junction Elemental" expanded="true" collapsible="false" textFill="BLUE">
+         <VBox spacing="15">
+            <VBox spacing="10">
+               <Label text="Elemental Attack" style="-fx-font-weight: bold;" />
+               <HBox spacing="15">
+                  <RadioButton fx:id="fireAttackRadio" text="Fire" />
+                  <RadioButton fx:id="iceAttackRadio" text="Ice" />
+                  <RadioButton fx:id="thunderAttackRadio" text="Thunder" />
+                  <RadioButton fx:id="earthAttackRadio" text="Earth" />
+                  <RadioButton fx:id="poisonAttackRadio" text="Poison" />
+                  <RadioButton fx:id="windAttackRadio" text="Wind" />
+                  <RadioButton fx:id="waterAttackRadio" text="Water" />
+                  <RadioButton fx:id="holyAttackRadio" text="Holy" />
+               </HBox>
+               <RadioButton fx:id="nonElementalAttackRadio" text="Non-Elemental" />
+               <VBox spacing="5">
+                  <Slider fx:id="elementalAttackSlider" min="0" max="100" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
+                  <Label fx:id="elementalAttackLabel" text="80%" alignment="CENTER" />
+               </VBox>
+            </VBox>
+            
+            <Separator />
+            
+            <VBox spacing="10">
+               <Label text="Elemental Defense" style="-fx-font-weight: bold;" />
+               <HBox spacing="15">
+                  <CheckBox fx:id="fireDefenseCheck" text="Fire" />
+                  <CheckBox fx:id="iceDefenseCheck" text="Ice" />
+                  <CheckBox fx:id="thunderDefenseCheck" text="Thunder" />
+                  <CheckBox fx:id="earthDefenseCheck" text="Earth" />
+                  <CheckBox fx:id="poisonDefenseCheck" text="Poison" />
+                  <CheckBox fx:id="windDefenseCheck" text="Wind" />
+                  <CheckBox fx:id="waterDefenseCheck" text="Water" />
+                  <CheckBox fx:id="holyDefenseCheck" text="Holy" />
+               </HBox>
+               <VBox spacing="5">
+                  <Slider fx:id="elementalDefenseSlider" min="0" max="100" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
+                  <Label fx:id="elementalDefenseLabel" text="80%" alignment="CENTER" />
+               </VBox>
+            </VBox>
+         </VBox>
+      </TitledPane>
+      
+      <TitledPane text="Junction Status" expanded="true" collapsible="false" textFill="ORANGE">
+         <VBox spacing="15">
+            <VBox spacing="10">
+               <Label text="Status Attack" style="-fx-font-weight: bold;" />
+               <GridPane hgap="15" vgap="8" styleClass="form-grid">
+                  <columnConstraints>
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                  </columnConstraints>
+                  
+                  <!-- Row 1 -->
+                  <CheckBox fx:id="junctionDeathCheck" text="Death" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionPoisonCheck" text="Poison" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionPetrifyCheck" text="Petrify" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionDarknessCheck" text="Darkness" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionSilenceCheck" text="Silence" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionBerserkCheck" text="Berserk" GridPane.columnIndex="5" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionZombieCheck" text="Zombie" GridPane.columnIndex="6" GridPane.rowIndex="0" />
+                  
+                  <!-- Row 2 -->
+                  <CheckBox fx:id="junctionSleepCheck" text="Sleep" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionSlowCheck" text="Slow" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionStopCheck" text="Stop" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionConfusionCheck" text="Confusion" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionDrainCheck" text="Drain" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+               </GridPane>
+               <VBox spacing="5">
+                  <Slider fx:id="statusAttackSlider" min="0" max="100" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
+                  <Label fx:id="statusAttackLabel" text="0%" alignment="CENTER" />
+               </VBox>
+            </VBox>
+            
+            <Separator />
+            
+            <VBox spacing="10">
+               <Label text="Status Defense" style="-fx-font-weight: bold;" />
+               <GridPane hgap="15" vgap="8" styleClass="form-grid">
+                  <columnConstraints>
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                     <ColumnConstraints minWidth="80" />
+                  </columnConstraints>
+                  
+                  <!-- Row 1 -->
+                  <CheckBox fx:id="junctionDeathDefenseCheck" text="Death" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionPoisonDefenseCheck" text="Poison" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionPetrifyDefenseCheck" text="Petrify" GridPane.columnIndex="2" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionDarknessDefenseCheck" text="Darkness" GridPane.columnIndex="3" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionSilenceDefenseCheck" text="Silence" GridPane.columnIndex="4" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionBerserkDefenseCheck" text="Berserk" GridPane.columnIndex="5" GridPane.rowIndex="0" />
+                  <CheckBox fx:id="junctionZombieDefenseCheck" text="Zombie" GridPane.columnIndex="6" GridPane.rowIndex="0" />
+                  
+                  <!-- Row 2 -->
+                  <CheckBox fx:id="junctionSleepDefenseCheck" text="Sleep" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionSlowDefenseCheck" text="Slow" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionStopDefenseCheck" text="Stop" GridPane.columnIndex="2" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionCurseDefenseCheck" text="Curse" GridPane.columnIndex="3" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionConfusionDefenseCheck" text="Confusion" GridPane.columnIndex="4" GridPane.rowIndex="1" />
+                  <CheckBox fx:id="junctionDrainDefenseCheck" text="Drain" GridPane.columnIndex="5" GridPane.rowIndex="1" />
+               </GridPane>
+               <VBox spacing="5">
+                  <Slider fx:id="statusDefenseSlider" min="0" max="100" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
+                  <Label fx:id="statusDefenseLabel" text="0%" alignment="CENTER" />
+               </VBox>
+            </VBox>
+         </VBox>
+      </TitledPane>
+   </VBox>
+</ScrollPane> 

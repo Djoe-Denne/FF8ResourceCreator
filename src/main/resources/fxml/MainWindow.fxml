@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ff8.infrastructure.adapters.primary.ui.controllers.MainController">
+   <top>
+      <VBox>
+         <MenuBar fx:id="menuBar">
+            <Menu text="File">
+               <MenuItem fx:id="openMenuItem" onAction="#openFile" text="Open..." accelerator="Ctrl+O" />
+               <SeparatorMenuItem />
+               <MenuItem fx:id="saveMenuItem" onAction="#saveFile" text="Save" accelerator="Ctrl+S" />
+               <MenuItem fx:id="saveAsMenuItem" onAction="#saveAsFile" text="Save As..." accelerator="Ctrl+Shift+S" />
+               <SeparatorMenuItem />
+               <MenuItem fx:id="exitMenuItem" onAction="#exitApplication" text="Exit" accelerator="Ctrl+Q" />
+            </Menu>
+            <Menu text="Help">
+               <MenuItem fx:id="aboutMenuItem" onAction="#showAbout" text="About FF8 Magic Creator" />
+            </Menu>
+         </MenuBar>
+      </VBox>
+   </top>
+   <center>
+      <SplitPane fx:id="mainSplitPane" dividerPositions="0.3" orientation="HORIZONTAL">
+         <AnchorPane minWidth="300" prefWidth="350">
+            <fx:include fx:id="magicListView" source="MagicListView.fxml" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+         </AnchorPane>
+         <AnchorPane minWidth="500">
+            <TabPane fx:id="mainTabPane" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+               <Tab text="General">
+                  <fx:include fx:id="generalTab" source="GeneralTab.fxml" />
+               </Tab>
+               <Tab text="Junction">
+                  <fx:include fx:id="junctionTab" source="JunctionTab.fxml" />
+               </Tab>
+               <Tab text="GF Compatibility">
+                  <fx:include fx:id="gfCompatibilityTab" source="GFCompatibilityTab.fxml" />
+               </Tab>
+               <Tab text="Raw View">
+                  <fx:include fx:id="rawViewTab" source="RawViewTab.fxml" />
+               </Tab>
+            </TabPane>
+         </AnchorPane>
+      </SplitPane>
+   </center>
+   <bottom>
+      <HBox spacing="10" styleClass="status-bar" alignment="CENTER_LEFT" minHeight="25" prefHeight="25">
+         <ProgressBar fx:id="progressBar" prefWidth="200" visible="false" />
+         <Label fx:id="statusLabel" text="Ready" />
+         <Region HBox.hgrow="ALWAYS" />
+      </HBox>
+   </bottom>
+</BorderPane> 
