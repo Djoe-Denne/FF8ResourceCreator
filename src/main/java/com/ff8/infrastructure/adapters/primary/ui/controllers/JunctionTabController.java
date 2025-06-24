@@ -146,14 +146,23 @@ public class JunctionTabController implements Initializable {
         // Create toggle group for elemental attack radio buttons
         elementalAttackToggleGroup = new ToggleGroup();
         fireAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        fireAttackRadio.setUserData(Element.FIRE);
         iceAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        iceAttackRadio.setUserData(Element.ICE);
         thunderAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        thunderAttackRadio.setUserData(Element.THUNDER);
         earthAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        earthAttackRadio.setUserData(Element.EARTH);
         poisonAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        poisonAttackRadio.setUserData(Element.POISON);
         windAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        windAttackRadio.setUserData(Element.WIND);
         waterAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        waterAttackRadio.setUserData(Element.WATER);
         holyAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        holyAttackRadio.setUserData(Element.HOLY);
         nonElementalAttackRadio.setToggleGroup(elementalAttackToggleGroup);
+        nonElementalAttackRadio.setUserData(Element.NONE);
     }
     
     private void setupSliders() {

@@ -2,20 +2,12 @@ package com.ff8.infrastructure.adapters.primary.ui.commands;
 
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.application.dto.MagicDisplayDTO;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Command for updating integer fields in the magic data.
  * Handles Integer spinner values for various numeric fields.
  */
-@RequiredArgsConstructor
-@Getter
-public class IntegerFieldUICommand implements UICommand<Integer> {
-    
-    private final MagicEditorUseCase magicEditorUseCase;
-    private final IntegerFieldType fieldType;
-    private final Integer magicIndex;
+public class IntegerFieldUICommand extends AbstractFieldCommand<Integer, IntegerFieldUICommand.IntegerFieldType> {
     
     public enum IntegerFieldType {
         DRAW_RESIST,
@@ -29,80 +21,53 @@ public class IntegerFieldUICommand implements UICommand<Integer> {
         STATUS_DEFENSE_VALUE
     }
     
-    
-    @Override
-    public String getDescription() {
-        return String.format("Update %s for magic %d", 
-            fieldType.name().toLowerCase().replace("_", " "), 
-            magicIndex != null ? magicIndex : 0);
+    public IntegerFieldUICommand(MagicEditorUseCase magicEditorUseCase,
+                                IntegerFieldType fieldType,
+                                Integer magicIndex) {
+        super(magicEditorUseCase, magicIndex, fieldType);
     }
     
     @Override
-    public void execute(Integer newValue) {
-        if (magicIndex == null) {
-            throw new IllegalStateException("Cannot execute command: Magic ID is null");
-        }
-        
-        // Get current magic data
-        MagicDisplayDTO currentMagic = magicEditorUseCase.getMagicData(magicIndex)
-                .orElseThrow(() -> new IllegalStateException("Magic not found: " + magicIndex));
-        MagicDisplayDTO updatedMagic = null;
-
+    protected MagicDisplayDTO updateSpecificField(MagicDisplayDTO currentMagic, Integer newValue, IntegerFieldType fieldType) {
         switch (fieldType) {
             case DRAW_RESIST:
-                updatedMagic = currentMagic.withDrawResist(newValue);
-                break;
+                return currentMagic.withDrawResist(newValue);
             case HIT_COUNT:
-                updatedMagic = currentMagic.withHitCount(newValue);
-                break;
+                return currentMagic.withHitCount(newValue);
             case STATUS_ATTACK:
-                updatedMagic = currentMagic.withStatusAttackEnabler(newValue);
-                break;
+                return currentMagic.withStatusAttackEnabler(newValue);
             case MAGIC_ID:
-                updatedMagic = currentMagic.withMagicID(newValue);
-                break;
+                return currentMagic.withMagicID(newValue);
             case SPELL_POWER:
-                updatedMagic = currentMagic.withSpellPower(newValue);
-                break;
+                return currentMagic.withSpellPower(newValue);
             case ELEMENTAL_ATTACK_VALUE:
-                updatedMagic = currentMagic.withJunctionElemental(currentMagic.junctionElemental().withAttackValue(newValue));
-                break;
+                return currentMagic.withJunctionElemental(
+                    currentMagic.junctionElemental().withAttackValue(newValue)
+                );
             case ELEMENTAL_DEFENSE_VALUE:
-                updatedMagic = currentMagic.withJunctionElemental(currentMagic.junctionElemental().withDefenseValue(newValue));
-                break;
+                return currentMagic.withJunctionElemental(
+                    currentMagic.junctionElemental().withDefenseValue(newValue)
+                );
             case STATUS_ATTACK_VALUE:
-                updatedMagic = currentMagic.withJunctionStatus(currentMagic.junctionStatus().withAttackValue(newValue));
-                break;
+                return currentMagic.withJunctionStatus(
+                    currentMagic.junctionStatus().withAttackValue(newValue)
+                );
             case STATUS_DEFENSE_VALUE:
-                updatedMagic = currentMagic.withJunctionStatus(currentMagic.junctionStatus().withDefenseValue(newValue));
-                break;
+                return currentMagic.withJunctionStatus(
+                    currentMagic.junctionStatus().withDefenseValue(newValue)
+                );
             default:
                 throw new IllegalArgumentException("Unknown integer field type: " + fieldType);
         }
-
-        magicEditorUseCase.updateMagicData(magicIndex, updatedMagic);
     }
     
     @Override
     public boolean validate(Integer newValue) {
-        if (newValue == null || magicIndex == null || magicIndex < 0) {
+        if (!super.validate(newValue)) {
             return false;
         }
         
-        // Validate ranges based on field type
-        switch (fieldType) {
-            case DRAW_RESIST, HIT_COUNT, STATUS_ATTACK, 
-                 MAGIC_ID, SPELL_POWER, ELEMENTAL_ATTACK_VALUE, 
-                 ELEMENTAL_DEFENSE_VALUE, STATUS_ATTACK_VALUE, 
-                 STATUS_DEFENSE_VALUE:
-                return newValue >= 0 && newValue <= 255;
-            default:
-                return false;
-        }
-    }
-    
-    @Override
-    public int getMagicIndex() {
-        return magicIndex;
+        // Validate ranges based on field type - most FF8 values are 0-255
+        return newValue >= 0 && newValue <= 255;
     }
 } 

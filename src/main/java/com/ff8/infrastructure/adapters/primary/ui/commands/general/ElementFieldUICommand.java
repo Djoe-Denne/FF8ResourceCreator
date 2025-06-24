@@ -1,55 +1,23 @@
 package com.ff8.infrastructure.adapters.primary.ui.commands.general;
 
 import com.ff8.application.ports.primary.MagicEditorUseCase;
-import com.ff8.domain.entities.enums.AttackType;
 import com.ff8.domain.entities.enums.Element;
-import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.AbstractUICommand;
 import com.ff8.application.dto.MagicDisplayDTO;
 
 /**
- * Command for updating enum fields in the magic data.
- * Handles Enum values for various dropdown/combo box fields.
+ * Command for updating the element field in the magic data.
+ * Handles Element enum values for element dropdown/combo box.
  */
-public class ElementFieldUICommand implements UICommand<Element> {
-    
-    private final MagicEditorUseCase magicEditorUseCase;
-    private final String description;
-    private final Integer magicIndex;
+public class ElementFieldUICommand extends AbstractUICommand<Element> {
     
     public ElementFieldUICommand(MagicEditorUseCase magicEditorUseCase, 
-                             Integer magicIndex) {
-        this.magicEditorUseCase = magicEditorUseCase;
-        this.magicIndex = magicIndex;
-        this.description = String.format("Update Element for magic %d", 
-            magicIndex != null ? magicIndex : 0);
+                                Integer magicIndex) {
+        super(magicEditorUseCase, magicIndex, "Update Element");
     }
     
     @Override
-    public void execute(Element newValue) {
-        if (magicIndex == null) {
-            throw new IllegalStateException("Cannot execute command: Magic ID is null");
-        }
-        
-        // Get current magic data
-        var currentMagic = magicEditorUseCase.getMagicData(magicIndex)
-                .orElseThrow(() -> new IllegalStateException("Magic not found: " + magicIndex));
-        MagicDisplayDTO updatedMagic = currentMagic.withElement(newValue);
-
-        magicEditorUseCase.updateMagicData(magicIndex, updatedMagic);
-    }
-    
-    @Override
-    public boolean validate(Element newValue) {
-        return newValue != null && magicIndex != null && magicIndex >= 0;
-    }
-    
-    @Override
-    public String getDescription() {
-        return description;
-    }
-    
-    @Override
-    public int getMagicIndex() {
-        return magicIndex != null ? magicIndex : -1;
+    protected MagicDisplayDTO updateMagicData(MagicDisplayDTO currentMagic, Element newValue) {
+        return currentMagic.withElement(newValue);
     }
 } 

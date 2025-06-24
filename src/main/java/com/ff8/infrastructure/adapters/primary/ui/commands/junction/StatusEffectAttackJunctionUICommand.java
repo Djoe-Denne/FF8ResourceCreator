@@ -1,62 +1,32 @@
 package com.ff8.infrastructure.adapters.primary.ui.commands.junction;
 
-import java.util.ArrayList;
+import java.util.List;
+
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.application.dto.MagicDisplayDTO;
 import com.ff8.domain.entities.enums.StatusEffect;
-import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.AbstractToggleListCommand;
 
 /**
- * Command for updating status effect values in the magic data.
- * Handles Boolean checkbox values for status effects.
+ * Command for updating status effect attack values in the magic data.
+ * Toggles status effects in/out of the attack list.
  */
-public class StatusEffectAttackJunctionUICommand implements UICommand<StatusEffect> {
-    
-    private final MagicEditorUseCase magicEditorUseCase;
-    private final String description;
-    private final Integer magicIndex;
+public class StatusEffectAttackJunctionUICommand extends AbstractToggleListCommand<StatusEffect> {
     
     public StatusEffectAttackJunctionUICommand(MagicEditorUseCase magicEditorUseCase, 
-                                Integer magicIndex) {
-        this.magicEditorUseCase = magicEditorUseCase;
-        this.magicIndex = magicIndex;
-        this.description = String.format("Update Status Effect Attack for magic %d", 
-            magicIndex != null ? magicIndex : 0);
+                                              Integer magicIndex) {
+        super(magicEditorUseCase, magicIndex, "Update Status Effect Attack");
     }
     
     @Override
-    public void execute(StatusEffect newValue) {
-        if (magicIndex == null) {
-            throw new IllegalStateException("Cannot execute command: Magic ID is null");
-        }
-        // Get current magic data
-        var currentMagic = magicEditorUseCase.getMagicData(magicIndex)
-                .orElseThrow(() -> new IllegalStateException("Magic not found: " + magicIndex));
-        MagicDisplayDTO updatedMagic = null;
-
-        var statusAttackEffect = new ArrayList<>(currentMagic.junctionStatus().attackStatuses());
-        if(statusAttackEffect.contains(newValue)) {
-            statusAttackEffect.remove(newValue);
-        } else {
-            statusAttackEffect.add(newValue);
-        }
-        updatedMagic = currentMagic.withJunctionStatus(currentMagic.junctionStatus().withAttackStatuses(statusAttackEffect));
-        
-        magicEditorUseCase.updateMagicData(magicIndex, updatedMagic);
+    protected List<StatusEffect> getCurrentList(MagicDisplayDTO currentMagic) {
+        return currentMagic.junctionStatus().attackStatuses();
     }
     
     @Override
-    public boolean validate(StatusEffect newValue) {
-        return newValue != null && magicIndex != null && magicIndex >= 0;
-    }
-    
-    @Override
-    public String getDescription() {
-        return description;
-    }
-    
-    @Override
-    public int getMagicIndex() {
-        return magicIndex != null ? magicIndex : -1;
+    protected MagicDisplayDTO updateMagicWithNewList(MagicDisplayDTO currentMagic, List<StatusEffect> newList) {
+        return currentMagic.withJunctionStatus(
+            currentMagic.junctionStatus().withAttackStatuses(newList)
+        );
     }
 } 
