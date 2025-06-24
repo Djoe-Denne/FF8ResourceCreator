@@ -2,6 +2,7 @@ package com.ff8.infrastructure.adapters.secondary.preferences;
 
 import com.ff8.application.ports.secondary.UserPreferencesPort;
 import com.ff8.domain.entities.UserPreferences;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     private static final String WINDOW_MAXIMIZED = "window.maximized";
     private static final String LAST_OPEN_DIRECTORY = "file.lastOpenDirectory";
     
+    @Getter
     private final Path preferencesFile;
     
     public PropertiesUserPreferencesAdapter() {

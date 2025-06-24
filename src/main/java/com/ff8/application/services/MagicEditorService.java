@@ -14,6 +14,7 @@ import com.ff8.domain.events.MagicDataChangeEvent;
 import com.ff8.domain.exceptions.InvalidMagicDataException;
 import com.ff8.domain.observers.AbstractSubject;
 import com.ff8.domain.services.MagicValidationService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
+@RequiredArgsConstructor
 public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> implements MagicEditorUseCase {
     private static final Logger logger = LoggerFactory.getLogger(MagicEditorService.class);
     
@@ -31,18 +32,6 @@ public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> im
     private final FileSystemPort fileSystemPort;
     private final MagicDataToDtoMapper magicDataToDtoMapper;
     private final DtoToMagicDataMapper dtoToMagicDataMapper;
-
-    public MagicEditorService(MagicRepository magicRepository, 
-                            MagicValidationService validationService, 
-                            FileSystemPort fileSystemPort,
-                            MagicDataToDtoMapper magicDataToDtoMapper,
-                            DtoToMagicDataMapper dtoToMagicDataMapper) {
-        this.magicRepository = magicRepository;
-        this.validationService = validationService;
-        this.fileSystemPort = fileSystemPort;
-        this.magicDataToDtoMapper = magicDataToDtoMapper;
-        this.dtoToMagicDataMapper = dtoToMagicDataMapper;
-    }
 
     @Override
     public Optional<MagicDisplayDTO> getMagicData(int magicIndex) {

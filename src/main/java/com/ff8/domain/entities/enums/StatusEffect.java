@@ -1,9 +1,14 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of all possible status effects in FF8.
  * Uses Java 21 enum features for better type safety and functionality.
  */
+@Getter
+@RequiredArgsConstructor
 public enum StatusEffect {
     // Bits 0-31 (DWORD)
     SLEEP(0, "Sleep"),
@@ -57,19 +62,6 @@ public enum StatusEffect {
         for (StatusEffect effect : values()) {
             BY_BIT_INDEX[effect.bitIndex] = effect;
         }
-    }
-
-    StatusEffect(int bitIndex, String displayName) {
-        this.bitIndex = bitIndex;
-        this.displayName = displayName;
-    }
-
-    public int getBitIndex() {
-        return bitIndex;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**

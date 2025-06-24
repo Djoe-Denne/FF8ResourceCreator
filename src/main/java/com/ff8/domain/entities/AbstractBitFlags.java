@@ -1,14 +1,18 @@
 package com.ff8.domain.entities;
 
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+
 import java.util.BitSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.IntStream;
 
 /**
  * Abstract base class for bit flag operations.
  * Provides common functionality for classes that manage BitSet data.
  */
+@Getter
+@EqualsAndHashCode
 public abstract class AbstractBitFlags {
     protected final BitSet flagBits;
     private final int totalBits;
@@ -81,18 +85,5 @@ public abstract class AbstractBitFlags {
         if (index < 0 || index >= totalBits) {
             throw new IllegalArgumentException("Bit index must be between 0 and " + (totalBits - 1));
         }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        AbstractBitFlags that = (AbstractBitFlags) o;
-        return totalBits == that.totalBits && Objects.equals(flagBits, that.flagBits);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(flagBits, totalBits);
     }
 } 

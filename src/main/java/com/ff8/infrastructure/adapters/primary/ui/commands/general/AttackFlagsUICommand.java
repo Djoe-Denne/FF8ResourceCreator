@@ -3,16 +3,19 @@ package com.ff8.infrastructure.adapters.primary.ui.commands.general;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
 import com.ff8.application.dto.MagicDisplayDTO;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Command for updating attack flags in the magic data.
  * Handles Boolean checkbox values for attack options.
  */
+@RequiredArgsConstructor
+@Getter
 public class AttackFlagsUICommand implements UICommand<Boolean> {
     
     private final MagicEditorUseCase magicEditorUseCase;
     private final AttackFlagType flagType;
-    private final String description;
     private final Integer magicIndex;
     
     public enum AttackFlagType {
@@ -20,17 +23,6 @@ public class AttackFlagsUICommand implements UICommand<Boolean> {
         ATTACK_REFLECTED,
         ATTACK_BREAK_DAMAGE_LIMIT,
         ATTACK_REVIVE
-    }
-    
-    public AttackFlagsUICommand(MagicEditorUseCase magicEditorUseCase, 
-                               AttackFlagType flagType,
-                               Integer magicIndex) {
-        this.magicEditorUseCase = magicEditorUseCase;
-        this.flagType = flagType;
-        this.magicIndex = magicIndex;
-        this.description = String.format("Update %s for magic %d", 
-            flagType.name().toLowerCase().replace("_", " "), 
-            magicIndex != null ? magicIndex : 0);
     }
     
     @Override
@@ -72,7 +64,9 @@ public class AttackFlagsUICommand implements UICommand<Boolean> {
     
     @Override
     public String getDescription() {
-        return description;
+        return String.format("Update %s for magic %d", 
+            flagType.name().toLowerCase().replace("_", " "), 
+            magicIndex != null ? magicIndex : 0);
     }
     
     @Override

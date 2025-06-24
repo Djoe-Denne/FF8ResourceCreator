@@ -1,8 +1,13 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of elemental types in FF8.
  */
+@Getter
+@RequiredArgsConstructor
 public enum Element {
     NONE(0, "None"),
     FIRE(1, "Fire"),
@@ -16,19 +21,6 @@ public enum Element {
 
     private final int value;
     private final String displayName;
-
-    Element(int value, String displayName) {
-        this.value = value;
-        this.displayName = displayName;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
 
     /**
      * Get Element by value using Java 21 pattern matching

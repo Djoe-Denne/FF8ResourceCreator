@@ -4,6 +4,7 @@ import com.ff8.application.ports.primary.UserPreferencesUseCase;
 import com.ff8.application.ports.secondary.UserPreferencesPort;
 import com.ff8.domain.entities.UserPreferences;
 import javafx.stage.Stage;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,16 +15,12 @@ import java.util.Objects;
  * Service implementing user preferences management use cases.
  * Handles loading, saving, and applying user preferences.
  */
+@RequiredArgsConstructor
 public class UserPreferencesService implements UserPreferencesUseCase {
     private static final Logger logger = LoggerFactory.getLogger(UserPreferencesService.class);
     
     private final UserPreferencesPort preferencesPort;
     private UserPreferences currentPreferences;
-    
-    public UserPreferencesService(UserPreferencesPort preferencesPort) {
-        this.preferencesPort = Objects.requireNonNull(preferencesPort, "UserPreferencesPort cannot be null");
-        this.currentPreferences = loadPreferences(); // Load on initialization
-    }
     
     @Override
     public UserPreferences loadPreferences() {
@@ -108,6 +105,9 @@ public class UserPreferencesService implements UserPreferencesUseCase {
     
     @Override
     public UserPreferences getCurrentPreferences() {
+        if (currentPreferences == null) {
+            return loadPreferences();
+        }
         return currentPreferences;
     }
     

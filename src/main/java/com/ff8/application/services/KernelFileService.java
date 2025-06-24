@@ -11,6 +11,7 @@ import com.ff8.domain.entities.MagicData;
 import com.ff8.domain.events.KernelReadEvent;
 import com.ff8.domain.exceptions.BinaryParseException;
 import com.ff8.domain.observers.AbstractSubject;
+import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+@RequiredArgsConstructor
 public class KernelFileService extends AbstractSubject<KernelReadEvent> implements KernelFileUseCase {
     private static final Logger logger = Logger.getLogger(KernelFileService.class.getName());
     private static final int MAGIC_SECTION_OFFSET = 0x021C; // Standard offset for magic data section
@@ -30,16 +32,6 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     private final MagicDataToDtoMapper magicDataToDtoMapper;
     private boolean fileLoaded = false;
     private String currentFilePath;
-
-    public KernelFileService(BinaryParserPort binaryParser, 
-                           FileSystemPort fileSystem, 
-                           MagicRepository magicRepository,
-                           MagicDataToDtoMapper magicDataToDtoMapper) {
-        this.binaryParser = binaryParser;
-        this.fileSystem = fileSystem;
-        this.magicRepository = magicRepository;
-        this.magicDataToDtoMapper = magicDataToDtoMapper;
-    }
 
     @Override
     public void loadKernelFile(String filePath) throws BinaryParseException {

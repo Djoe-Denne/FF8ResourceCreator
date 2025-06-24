@@ -1,8 +1,13 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of target flags in FF8.
  */
+@Getter
+@RequiredArgsConstructor
 public enum TargetFlag {
     DEAD(0, "Dead"),
     UNKNOWN_1(1, "Unknown 1"),
@@ -23,19 +28,6 @@ public enum TargetFlag {
         for (TargetFlag flag : values()) {
             BY_BIT_INDEX[flag.bitIndex] = flag;
         }
-    }
-
-    TargetFlag(int bitIndex, String displayName) {
-        this.bitIndex = bitIndex;
-        this.displayName = displayName;
-    }
-
-    public int getBitIndex() {
-        return bitIndex;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**

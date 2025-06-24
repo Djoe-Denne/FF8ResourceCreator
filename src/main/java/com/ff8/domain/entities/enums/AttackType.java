@@ -1,8 +1,13 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of attack types in FF8.
  */
+@Getter
+@RequiredArgsConstructor
 public enum AttackType {
     NONE(0, "None"),
     PHYSICAL_ATTACK(1, "Physical Attack"),
@@ -52,19 +57,6 @@ public enum AttackType {
         for (AttackType type : values()) {
             BY_VALUE[type.value] = type;
         }
-    }
-
-    AttackType(int value, String displayName) {
-        this.value = value;
-        this.displayName = displayName;
-    }
-
-    public int getValue() {
-        return value;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**

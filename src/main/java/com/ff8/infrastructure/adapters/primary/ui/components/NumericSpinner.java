@@ -4,6 +4,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextFormatter;
 import javafx.util.converter.IntegerStringConverter;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +14,7 @@ import java.util.function.UnaryOperator;
  * Enhanced numeric spinner with improved validation and user experience.
  * Provides better handling of numeric input and prevents invalid values.
  */
+@Getter
 public class NumericSpinner extends Spinner<Integer> {
     private static final Logger logger = LoggerFactory.getLogger(NumericSpinner.class);
     
@@ -100,20 +102,6 @@ public class NumericSpinner extends Spinner<Integer> {
                 }
             }
         });
-    }
-    
-    /**
-     * Get the minimum allowed value
-     */
-    public int getMinValue() {
-        return minValue;
-    }
-    
-    /**
-     * Get the maximum allowed value
-     */
-    public int getMaxValue() {
-        return maxValue;
     }
     
     /**

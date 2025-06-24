@@ -1,8 +1,13 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of attack flags in FF8.
  */
+@Getter
+@RequiredArgsConstructor
 public enum AttackFlag {
     SHELLED(0, "Shelled"),
     UNKNOWN_1(1, "Unknown 1"),
@@ -23,19 +28,6 @@ public enum AttackFlag {
         for (AttackFlag flag : values()) {
             BY_BIT_INDEX[flag.bitIndex] = flag;
         }
-    }
-
-    AttackFlag(int bitIndex, String displayName) {
-        this.bitIndex = bitIndex;
-        this.displayName = displayName;
-    }
-
-    public int getBitIndex() {
-        return bitIndex;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**

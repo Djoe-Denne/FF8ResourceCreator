@@ -1,8 +1,13 @@
 package com.ff8.domain.entities.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
 /**
  * Enumeration of Guardian Forces (GFs) in FF8.
  */
+@Getter
+@RequiredArgsConstructor
 public enum GF {
     QUEZACOLT(0, "Quezacolt"),
     SHIVA(1, "Shiva"),
@@ -31,19 +36,6 @@ public enum GF {
         for (GF gf : values()) {
             BY_INDEX[gf.index] = gf;
         }
-    }
-
-    GF(int index, String displayName) {
-        this.index = index;
-        this.displayName = displayName;
-    }
-
-    public int getIndex() {
-        return index;
-    }
-
-    public String getDisplayName() {
-        return displayName;
     }
 
     /**
