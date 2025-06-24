@@ -2,6 +2,7 @@ package com.ff8.application.dto;
 
 import com.ff8.domain.entities.enums.StatusEffect;
 import java.util.List;
+import lombok.Builder;
 import lombok.With;
 
 /**
@@ -9,6 +10,7 @@ import lombok.With;
  * Uses Java 21 record for immutability.
  */
 @With
+@Builder
 public record JunctionStatusDTO(
         List<StatusEffect> attackStatuses,
         int attackValue,
