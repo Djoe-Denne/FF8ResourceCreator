@@ -5,6 +5,16 @@ import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.domain.entities.enums.AttackType;
 import com.ff8.domain.entities.enums.Element;
 import com.ff8.domain.entities.enums.StatusEffect;
+import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.IntegerFieldUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.IntegerFieldUICommand.IntegerFieldType;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.AttackFlagsUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.AttackTypeFieldUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.ElementFieldUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.StatusEffectAttackUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.TargetFlagsUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.AttackFlagsUICommand.AttackFlagType;
+import com.ff8.infrastructure.adapters.primary.ui.commands.general.TargetFlagsUICommand.TargetFlagType;
 import com.ff8.infrastructure.config.ApplicationConfig;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -187,7 +197,7 @@ public class GeneralTabController implements Initializable {
     private void populateMagicIdComboBox() {
         try {
             // Load magic ID list from use case
-            var magicIdList = magicEditorUseCase.getMagicIdList();
+            var magicIdList = magicEditorUseCase.getMagicIndexList();
             magicIdComboBox.getItems().addAll(magicIdList);
             logger.info("Loaded {} magic IDs from resource file", magicIdList.size());
         } catch (Exception e) {
@@ -201,61 +211,115 @@ public class GeneralTabController implements Initializable {
     }
     
     private void setupChangeListeners() {
-        // Add change listeners to all controls
-        spellPowerSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        drawResistSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        hitCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusAttackSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        elementComboBox.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        attackTypeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        magicIdComboBox.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Integer field spinners using command pattern
+        spellPowerSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.SPELL_POWER, getCurrentMagicIndex()), newVal));
+        drawResistSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.DRAW_RESIST, getCurrentMagicIndex()), newVal));
+        hitCountSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.HIT_COUNT, getCurrentMagicIndex()), newVal));
+        statusAttackSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.STATUS_ATTACK, getCurrentMagicIndex()), newVal));
         
-        // Target checkboxes
-        targetDeadCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        targetSingleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        targetEnemyCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        targetSingleSideCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Element and enum fields using command pattern
+        elementComboBox.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementFieldUICommand(magicEditorUseCase, getCurrentMagicIndex()), newVal));
+        attackTypeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new AttackTypeFieldUICommand(magicEditorUseCase, getCurrentMagicIndex()), newVal));
+        magicIdComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                int id = Integer.parseInt(newVal.split(" - ")[0]);
+                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.MAGIC_ID, getCurrentMagicIndex()), id);
+            }
+        });
         
-        // Status effect checkboxes
-        statusSleepCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusHasteCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusSlowCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusStopCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusRegenCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusProtectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusShellCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusReflectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusAuraCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusCurseCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDoomCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusInvincibleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusFloatCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusPetrifyingCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusConfusionCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDrainCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusEjectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDoubleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusTripleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDefendCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusChargedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusBackAttackCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusVit0CheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusAngelWingCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusHasMagicCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusSummonGFCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDeathCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusPoisonCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusPetrifyCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusDarknessCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusSilenceCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusBerserkCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        statusZombieCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Target checkboxes using command pattern
+        targetDeadCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new TargetFlagsUICommand(magicEditorUseCase, TargetFlagType.TARGET_DEAD, getCurrentMagicIndex()), newVal));
+        targetSingleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new TargetFlagsUICommand(magicEditorUseCase, TargetFlagType.TARGET_SINGLE, getCurrentMagicIndex()), newVal));
+        targetEnemyCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new TargetFlagsUICommand(magicEditorUseCase, TargetFlagType.TARGET_ENEMY, getCurrentMagicIndex()), newVal));
+        targetSingleSideCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new TargetFlagsUICommand(magicEditorUseCase, TargetFlagType.TARGET_SINGLE_SIDE, getCurrentMagicIndex()), newVal));
         
-        // Attack flag checkboxes
-        attackShelledCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        attackReflectedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        attackBreakDamageLimitCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        attackReviveCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Status effect checkboxes using command pattern
+        statusSleepCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLEEP));
+        statusHasteCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.HASTE));
+        statusSlowCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLOW));
+        statusStopCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.STOP));
+        statusRegenCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.REGEN));
+        statusProtectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.PROTECT));
+        statusShellCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SHELL));
+        statusReflectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.REFLECT));
+        statusAuraCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.AURA));
+        statusCurseCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CURSE));
+        statusDoomCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DOOM));
+        statusInvincibleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.INVINCIBLE));
+        statusFloatCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.FLOAT));
+        statusPetrifyingCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.PETRIFYING));
+        statusConfusionCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CONFUSION));
+        statusDrainCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DRAIN));
+        statusEjectCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.EJECT));
+        statusDoubleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DOUBLE));
+        statusTripleCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.TRIPLE));
+        statusDefendCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DEFEND));
+        statusChargedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CHARGED));
+        statusBackAttackCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.BACK_ATTACK));
+        statusVit0CheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.VIT_0));
+        statusAngelWingCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.ANGEL_WING));
+        statusHasMagicCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.HAS_MAGIC));
+        statusSummonGFCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SUMMON_GF));
+        statusDeathCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DEATH));
+        statusPoisonCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.POISON));
+        statusPetrifyCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.PETRIFY));
+        statusDarknessCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DARKNESS));
+        statusSilenceCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SILENCE));
+        statusBerserkCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.BERSERK));
+        statusZombieCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.ZOMBIE));
+        
+        // Attack flag checkboxes using command pattern
+        attackShelledCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new AttackFlagsUICommand(magicEditorUseCase, AttackFlagType.ATTACK_SHELLED, getCurrentMagicIndex()), newVal));
+        attackReflectedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new AttackFlagsUICommand(magicEditorUseCase, AttackFlagType.ATTACK_REFLECTED, getCurrentMagicIndex()), newVal));
+        attackBreakDamageLimitCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new AttackFlagsUICommand(magicEditorUseCase, AttackFlagType.ATTACK_BREAK_DAMAGE_LIMIT, getCurrentMagicIndex()), newVal));
+        attackReviveCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new AttackFlagsUICommand(magicEditorUseCase, AttackFlagType.ATTACK_REVIVE, getCurrentMagicIndex()), newVal));
     }
     
     private void loadMagicData(MagicDisplayDTO magic) {
@@ -457,14 +521,28 @@ public class GeneralTabController implements Initializable {
         attackReviveCheckBox.setDisable(!enabled);
     }
     
-    private void onFieldChanged() {
+
+    
+    /**
+     * Execute a UI command for Integer field changes.
+     * This follows the Command Pattern for encapsulating user actions.
+     */
+    private void onFieldChange(UICommand<Integer> command, Integer newValue) {
         if (updatingFromModel || currentMagic == null) {
             return;
         }
         
         try {
-            // Validate and save changes
-            validateAndSave();
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
             
             // Mark main controller as having changes
             if (mainController != null) {
@@ -472,26 +550,113 @@ public class GeneralTabController implements Initializable {
             }
             
         } catch (Exception e) {
-            logger.error("Error saving magic changes", e);
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
             showError("Failed to save changes", e.getMessage());
         }
     }
     
-    private void validateAndSave() {
-        if (elementComboBox.getValue() == null) {
-            throw new IllegalArgumentException("Element must be selected");
+    /**
+     * Execute a UI command for Element field changes.
+     * This follows the Command Pattern for encapsulating user actions.
+     */
+    private void onFieldChange(UICommand<Element> command, Element newValue) {
+        if (updatingFromModel || currentMagic == null) {
+            return;
         }
         
-        if (attackTypeComboBox.getValue() == null) {
-            throw new IllegalArgumentException("Attack type must be selected");
+        try {
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
+            
+            // Mark main controller as having changes
+            if (mainController != null) {
+                mainController.markAsChanged();
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
+            showError("Failed to save changes", e.getMessage());
+        }
+    }
+    
+    /**
+     * Execute a UI command for Boolean field changes.
+     * This follows the Command Pattern for encapsulating user actions.
+     */
+    private void onFieldChange(UICommand<Boolean> command, Boolean newValue) {
+        if (updatingFromModel || currentMagic == null) {
+            return;
         }
         
-        // Create updated magic data and save
-        logger.debug("Validating and saving changes for magic");
+        try {
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
+            
+            // Mark main controller as having changes
+            if (mainController != null) {
+                mainController.markAsChanged();
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
+            showError("Failed to save changes", e.getMessage());
+        }
+    }
+    
+    /**
+     * Execute a UI command for Enum field changes (AttackType).
+     * This follows the Command Pattern for encapsulating user actions.
+     */
+    private <T extends Enum<T>> void onFieldChange(UICommand<T> command, T newValue) {
+        if (updatingFromModel || currentMagic == null) {
+            return;
+        }
         
-        // For now, just log the changes
-        logger.info("Magic updated - Power: {}, Element: {}, Draw Resist: {}", 
-            spellPowerSpinner.getValue(), elementComboBox.getValue(), drawResistSpinner.getValue());
+        try {
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
+            
+            // Mark main controller as having changes
+            if (mainController != null) {
+                mainController.markAsChanged();
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
+            showError("Failed to save changes", e.getMessage());
+        }
+    }
+    
+    /**
+     * Get the current magic index for command creation.
+     * @return the current magic index (unique identifier), or -1 if no magic is selected
+     */
+    private int getCurrentMagicIndex() {
+        return currentMagic != null ? currentMagic.index() : -1;
     }
     
     private void showError(String message, String details) {

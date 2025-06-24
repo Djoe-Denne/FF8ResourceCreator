@@ -63,6 +63,30 @@ public class MainController implements Initializable {
         this.userPreferencesUseCase = config.getUserPreferencesUseCase();
         this.magicListModel = new MagicListModel();
         
+        // Register MagicListModel as observer of KernelFileService for automatic updates
+        if (kernelFileUseCase instanceof com.ff8.application.services.KernelFileService) {
+            com.ff8.application.services.KernelFileService kernelFileService = 
+                (com.ff8.application.services.KernelFileService) kernelFileUseCase;
+            kernelFileService.registerObserver(magicListModel);
+            logger.info("Registered MagicListModel as observer of KernelFileService");
+        }
+        
+        // Register MagicListModel as observer of MagicEditorService for automatic updates
+        if (magicEditorUseCase instanceof com.ff8.application.services.MagicEditorService) {
+            com.ff8.application.services.MagicEditorService magicEditorService = 
+                (com.ff8.application.services.MagicEditorService) magicEditorUseCase;
+            
+            // Create a custom observer that delegates to the MagicListModel's updateMagicData method
+            magicEditorService.registerObserver(changeEvent -> {
+                try {
+                    magicListModel.updateMagicData(changeEvent);
+                } catch (Exception e) {
+                    magicListModel.onMagicDataChangeError(e, changeEvent);
+                }
+            });
+            logger.info("Registered MagicListModel as observer of MagicEditorService");
+        }
+        
         logger.info("MainController initialized");
     }
     
@@ -248,21 +272,16 @@ public class MainController implements Initializable {
                 updateMessage("Loading kernel file...");
                 updateProgress(0, 1);
                 
-                // Load the kernel file
+                // Load the kernel file - MagicListModel will be updated automatically via observer pattern
                 kernelFileUseCase.loadKernelFile(file.getAbsolutePath());
-                updateProgress(0.5, 1);
-                
-                // Get all magic data
-                var allMagic = magicEditorUseCase.getAllMagic();
                 updateProgress(1, 1);
                 
                 // Update UI on JavaFX thread
                 javafx.application.Platform.runLater(() -> {
-                    magicListModel.setMagicList(allMagic);
                     currentFile = file;
                     hasUnsavedChanges = false;
                     updateUIState();
-                    updateMessage("Loaded " + allMagic.size() + " magic spells from " + file.getName());
+                    updateMessage("Loaded kernel file: " + file.getName() + " (magic list updated automatically)");
                 });
                 
                 return null;

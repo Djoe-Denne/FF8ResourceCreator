@@ -18,15 +18,6 @@ public class InMemoryMagicRepository implements MagicRepository {
     }
 
     @Override
-    @Deprecated
-    public Optional<MagicData> findById(int magicId) {
-        // Find first magic with matching ID (may not be unique)
-        return magicStore.values().stream()
-            .filter(magic -> magic.getMagicID() == magicId)
-            .findFirst();
-    }
-
-    @Override
     public List<MagicData> findAll() {
         return new ArrayList<>(magicStore.values());
     }
@@ -139,13 +130,6 @@ public class InMemoryMagicRepository implements MagicRepository {
     public Optional<MagicData> getOriginalByIndex(int index) {
         // For simplified repository, return current data (no original backup stored)
         return findByIndex(index);
-    }
-
-    @Override
-    @Deprecated
-    public Optional<MagicData> getOriginalById(int magicId) {
-        // For simplified repository, return current data (no original backup stored)
-        return findById(magicId);
     }
 
     @Override

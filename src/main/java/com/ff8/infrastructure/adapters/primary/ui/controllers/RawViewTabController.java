@@ -97,7 +97,7 @@ public class RawViewTabController implements Initializable {
                 logger.debug("Loading raw view for magic: {}", magic.spellName());
                 
                 // Get raw view data from use case
-                var rawViewOptional = rawDataViewUseCase.getRawView(magic.magicID());
+                var rawViewOptional = rawDataViewUseCase.getRawView(magic.index());
                 
                 if (rawViewOptional.isPresent()) {
                     RawViewDTO rawView = rawViewOptional.get();

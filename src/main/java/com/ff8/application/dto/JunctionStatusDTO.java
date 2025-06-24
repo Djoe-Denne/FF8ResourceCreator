@@ -2,11 +2,13 @@ package com.ff8.application.dto;
 
 import com.ff8.domain.entities.enums.StatusEffect;
 import java.util.List;
+import lombok.With;
 
 /**
  * Data Transfer Object for junction status effect bonuses.
  * Uses Java 21 record for immutability.
  */
+@With
 public record JunctionStatusDTO(
         List<StatusEffect> attackStatuses,
         int attackValue,

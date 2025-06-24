@@ -1,12 +1,16 @@
 package com.ff8.application.services;
 
+import com.ff8.application.dto.MagicDisplayDTO;
+import com.ff8.application.mappers.MagicDataToDtoMapper;
 import com.ff8.application.ports.primary.KernelFileUseCase;
 import com.ff8.application.ports.primary.KernelFileUseCase.ValidationResult;
 import com.ff8.application.ports.secondary.BinaryParserPort;
 import com.ff8.application.ports.secondary.FileSystemPort;
 import com.ff8.application.ports.secondary.MagicRepository;
 import com.ff8.domain.entities.MagicData;
+import com.ff8.domain.events.KernelReadEvent;
 import com.ff8.domain.exceptions.BinaryParseException;
+import com.ff8.domain.observers.AbstractSubject;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -14,7 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-public class KernelFileService implements KernelFileUseCase {
+public class KernelFileService extends AbstractSubject<KernelReadEvent> implements KernelFileUseCase {
     private static final Logger logger = Logger.getLogger(KernelFileService.class.getName());
     private static final int MAGIC_SECTION_OFFSET = 0x021C; // Standard offset for magic data section
     private static final int MAGIC_STRUCT_SIZE = 0x3C; // 60 bytes per magic entry
@@ -23,15 +27,18 @@ public class KernelFileService implements KernelFileUseCase {
     private final BinaryParserPort binaryParser;
     private final FileSystemPort fileSystem;
     private final MagicRepository magicRepository;
+    private final MagicDataToDtoMapper magicDataToDtoMapper;
     private boolean fileLoaded = false;
     private String currentFilePath;
 
     public KernelFileService(BinaryParserPort binaryParser, 
                            FileSystemPort fileSystem, 
-                           MagicRepository magicRepository) {
+                           MagicRepository magicRepository,
+                           MagicDataToDtoMapper magicDataToDtoMapper) {
         this.binaryParser = binaryParser;
         this.fileSystem = fileSystem;
         this.magicRepository = magicRepository;
+        this.magicDataToDtoMapper = magicDataToDtoMapper;
     }
 
     @Override
@@ -64,6 +71,18 @@ public class KernelFileService implements KernelFileUseCase {
             this.fileLoaded = true;
             
             logger.info("Successfully loaded " + MAGIC_COUNT + " magic spells from kernel file");
+            
+            // Get file size for the event
+            long fileSize = kernelData.length;
+            
+            // Convert MagicData to MagicDisplayDTO for the event using the mapper
+            List<MagicDisplayDTO> magicDisplayList = magicDataToDtoMapper.toDtoList(magicRepository.findAll());
+            
+            // Notify observers about the successful kernel read
+            KernelReadEvent kernelReadEvent = new KernelReadEvent(filePath, magicDisplayList, fileSize);
+            notifyObservers(kernelReadEvent);
+            
+            logger.info("Notified " + getObserverCount() + " observers about kernel file load");
             
         } catch (IOException e) {
             throw new BinaryParseException("Failed to read kernel file: " + e.getMessage(), e);
@@ -239,4 +258,5 @@ public class KernelFileService implements KernelFileUseCase {
         
         return new ValidationResult(errors.isEmpty(), errors.isEmpty() ? "File integrity check passed" : "File integrity issues found", errors);
     }
+    
 } 

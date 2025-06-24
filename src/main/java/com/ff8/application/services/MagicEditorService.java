@@ -1,12 +1,18 @@
 package com.ff8.application.services;
 
-import com.ff8.application.dto.*;
+import com.ff8.application.dto.MagicDisplayDTO;
+import com.ff8.application.mappers.DtoToMagicDataMapper;
+import com.ff8.application.mappers.MagicDataToDtoMapper;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.application.ports.secondary.MagicRepository;
 import com.ff8.application.ports.secondary.FileSystemPort;
-import com.ff8.domain.entities.*;
-import com.ff8.domain.entities.enums.*;
+import com.ff8.application.dto.JunctionStatsDTO;
+import com.ff8.domain.entities.MagicData;
+import com.ff8.domain.entities.enums.Element;
+import com.ff8.domain.entities.enums.AttackType;
+import com.ff8.domain.events.MagicDataChangeEvent;
 import com.ff8.domain.exceptions.InvalidMagicDataException;
+import com.ff8.domain.observers.AbstractSubject;
 import com.ff8.domain.services.MagicValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,31 +21,39 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
-public class MagicEditorService implements MagicEditorUseCase {
+
+public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> implements MagicEditorUseCase {
     private static final Logger logger = LoggerFactory.getLogger(MagicEditorService.class);
     
     private final MagicRepository magicRepository;
     private final MagicValidationService validationService;
     private final FileSystemPort fileSystemPort;
+    private final MagicDataToDtoMapper magicDataToDtoMapper;
+    private final DtoToMagicDataMapper dtoToMagicDataMapper;
 
-    public MagicEditorService(MagicRepository magicRepository, MagicValidationService validationService, FileSystemPort fileSystemPort) {
+    public MagicEditorService(MagicRepository magicRepository, 
+                            MagicValidationService validationService, 
+                            FileSystemPort fileSystemPort,
+                            MagicDataToDtoMapper magicDataToDtoMapper,
+                            DtoToMagicDataMapper dtoToMagicDataMapper) {
         this.magicRepository = magicRepository;
         this.validationService = validationService;
         this.fileSystemPort = fileSystemPort;
+        this.magicDataToDtoMapper = magicDataToDtoMapper;
+        this.dtoToMagicDataMapper = dtoToMagicDataMapper;
     }
 
     @Override
-    public Optional<MagicDisplayDTO> getMagicData(int magicId) {
-        return magicRepository.findById(magicId)
-            .map(this::mapToDisplayDTO);
+    public Optional<MagicDisplayDTO> getMagicData(int magicIndex) {
+        return magicRepository.findByIndex(magicIndex)
+            .map(magicDataToDtoMapper::toDto);
     }
 
     @Override
-    public void updateMagicData(int magicId, MagicDisplayDTO data) {
-        MagicData originalMagic = magicRepository.findById(magicId)
-            .orElseThrow(() -> new IllegalArgumentException("Magic with ID " + magicId + " not found"));
+    public void updateMagicData(int magicIndex, MagicDisplayDTO data) {
+        MagicData originalMagic = magicRepository.findByIndex(data.index())
+            .orElseThrow(() -> new IllegalArgumentException("Magic with index " + data.index() + " not found"));
         
         // Validate the data before updating
         ValidationResult validation = validateMagicData(data);
@@ -47,11 +61,18 @@ public class MagicEditorService implements MagicEditorUseCase {
             throw new InvalidMagicDataException("Validation failed: " + String.join(", ", validation.errors()));
         }
         
-        // Create updated magic data using builder pattern
-        MagicData updatedMagic = updateMagicFromDTO(originalMagic, data);
+        // Convert DTO back to domain using mapper (preserving binary fields)
+        MagicData updatedMagic = dtoToMagicDataMapper.toDomain(data, originalMagic);
         
         // Save the updated magic
         magicRepository.save(updatedMagic);
+        
+        // Emit event to notify observers of the change
+        MagicDataChangeEvent changeEvent = new MagicDataChangeEvent(magicIndex, data, "update");
+        notifyObservers(changeEvent);
+        
+        logger.info("Magic data updated for index {} and event notified to {} observers", 
+                   magicIndex, getObserverCount());
     }
 
     @Override
@@ -65,9 +86,7 @@ public class MagicEditorService implements MagicEditorUseCase {
                        i, magic.getIndex(), magic.getMagicID(), magic.getExtractedSpellName());
         }
         
-        List<MagicDisplayDTO> result = allMagicData.stream()
-            .map(this::mapToDisplayDTO)
-            .collect(Collectors.toList());
+        List<MagicDisplayDTO> result = magicDataToDtoMapper.toDtoList(allMagicData);
         
         logger.info("MagicEditorService.getAllMagic(): Returning {} display DTOs", result.size());
         return result;
@@ -90,26 +109,41 @@ public class MagicEditorService implements MagicEditorUseCase {
             .build();
         
         magicRepository.save(newMagic);
-        return mapToDisplayDTO(newMagic);
+        MagicDisplayDTO newMagicDto = magicDataToDtoMapper.toDto(newMagic);
+        
+        // Emit event to notify observers of the new magic creation
+        MagicDataChangeEvent changeEvent = new MagicDataChangeEvent(newIndex, newMagicDto, "create");
+        notifyObservers(changeEvent);
+        
+        logger.info("New magic created at index {} and event notified to {} observers", 
+                   newIndex, getObserverCount());
+        
+        return newMagicDto;
     }
 
     @Override
     public MagicDisplayDTO duplicateMagic(int sourceId, String newName) {
-        MagicData source = magicRepository.findById(sourceId)
-            .orElseThrow(() -> new IllegalArgumentException("Source magic with ID " + sourceId + " not found"));
+        MagicData source = magicRepository.findByIndex(sourceId)
+            .orElseThrow(() -> new IllegalArgumentException("Source magic with index " + sourceId + " not found"));
         
-        // Create a new magic data with a new ID and index using Lombok builder pattern
-        int newId = magicRepository.getNextAvailableId();
         int newIndex = magicRepository.getNextAvailableIndex();
         // Create new instance with toBuilder from existing source
         MagicData newMagic = source.toBuilder()
             .index(newIndex)
-            .magicID(newId)
             .extractedSpellName(newName)
             .build();
         
         magicRepository.save(newMagic);
-        return mapToDisplayDTO(newMagic);
+        MagicDisplayDTO duplicatedMagicDto = magicDataToDtoMapper.toDto(newMagic);
+        
+        // Emit event to notify observers of the magic duplication
+        MagicDataChangeEvent changeEvent = new MagicDataChangeEvent(newIndex, duplicatedMagicDto, "duplicate");
+        notifyObservers(changeEvent);
+        
+        logger.info("Magic duplicated from index {} to index {} and event notified to {} observers", 
+                   sourceId, newIndex, getObserverCount());
+        
+        return duplicatedMagicDto;
     }
 
     @Override
@@ -152,119 +186,19 @@ public class MagicEditorService implements MagicEditorUseCase {
         }
     }
 
-    private MagicDisplayDTO mapToDisplayDTO(MagicData magic) {
-        return new MagicDisplayDTO(
-            magic.getIndex(),
-            magic.getMagicID(),
-            magic.getExtractedSpellName(),
-            magic.getExtractedSpellDescription(),
-            magic.getSpellPower(),
-            magic.getElement(),
-            magic.getAttackType(),
-            magic.getDrawResist(),
-            magic.getHitCount(),
-            magic.getStatusAttackEnabler(),
-            // TargetInfo
-            new MagicDisplayDTO.TargetInfo(
-                magic.getTargetInfo().isDead(),
-                magic.getTargetInfo().isSingle(),
-                magic.getTargetInfo().isEnemy(),
-                magic.getTargetInfo().isSingleSide(),
-                magic.getTargetInfo().getActiveTargets()
-            ),
-            // AttackInfo
-            new MagicDisplayDTO.AttackInfo(
-                magic.getAttackFlags().isShelled(),
-                magic.getAttackFlags().isReflected(),
-                magic.getAttackFlags().isBreakDamageLimit(),
-                magic.getAttackFlags().isRevive(),
-                magic.getAttackFlags().getActiveFlags()
-            ),
-            // Active status effects
-            magic.getStatusEffects().getActiveStatuses(),
-            // Junction DTOs
-            mapJunctionStats(magic.getJunctionStats()),
-            mapJunctionElemental(magic.getJunctionElemental()),
-            mapJunctionStatus(magic.getJunctionStatus()),
-            mapGFCompatibility(magic.getGfCompatibility()),
-            // Metadata
-            magic.hasStatusEffects(),
-            magic.hasJunctionBonuses(),
-            magic.isCurative(),
-            false // not modified initially
-        );
-    }
-
-    private JunctionStatsDTO mapJunctionStats(JunctionStats stats) {
-        if (stats == null) return null;
-        return new JunctionStatsDTO(
-            stats.getHp(),
-            stats.getStr(),
-            stats.getVit(),
-            stats.getMag(),
-            stats.getSpr(),
-            stats.getSpd(),
-            stats.getEva(),
-            stats.getHit(),
-            stats.getLuck()
-        );
-    }
-
-    private JunctionElementalDTO mapJunctionElemental(JunctionElemental elemental) {
-        if (elemental == null) return null;
-        return new JunctionElementalDTO(
-            elemental.getAttackElement(),
-            elemental.getAttackValue(),
-            elemental.getDefenseElements(),
-            elemental.getDefenseValue()
-        );
-    }
-
-    private JunctionStatusDTO mapJunctionStatus(JunctionStatusEffects status) {
-        if (status == null) return null;
-        return new JunctionStatusDTO(
-            status.getAttackStatuses().getActiveStatuses(),
-            status.getAttackValue(),
-            status.getDefenseStatuses().getActiveStatuses(),
-            status.getDefenseValue()
-        );
-    }
-
-    private GFCompatibilityDTO mapGFCompatibility(GFCompatibilitySet compatibility) {
-        if (compatibility == null) return null;
-        return new GFCompatibilityDTO(compatibility.getAllCompatibilities());
-    }
-
-    private MagicData updateMagicFromDTO(MagicData original, MagicDisplayDTO dto) {
-        // Use Lombok builder pattern to create immutable updates
-        // Create new instance with toBuilder from original
-        return original.toBuilder()
-            .spellPower(dto.spellPower())
-            .hitCount(dto.hitCount())
-            .drawResist(dto.drawResist())
-            .element(dto.element())
-            .attackType(dto.attackType())
-            .junctionStats(dto.junctionStats() != null ? 
-                new JunctionStats(
-                    dto.junctionStats().hp(),
-                    dto.junctionStats().str(),
-                    dto.junctionStats().vit(),
-                    dto.junctionStats().mag(),
-                    dto.junctionStats().spr(),
-                    dto.junctionStats().spd(),
-                    dto.junctionStats().eva(),
-                    dto.junctionStats().hit(),
-                    dto.junctionStats().luck()
-                ) : original.getJunctionStats()
-            )
-            .build();
+    @Override
+    public MagicDisplayDTO updateAndGetMagicData(int magicIndex, MagicDisplayDTO updatedData) throws InvalidMagicDataException {
+        logger.info("MagicEditorService.updateAndGetMagicData(): Updating magic data for ID {}", magicIndex);
+        // Update the magic data (this will automatically emit the event via updateMagicData)
+        updateMagicData(magicIndex, updatedData);
+        
+        return getMagicData(magicIndex)
+            .orElseThrow(() -> new IllegalStateException("Magic data was just updated but not found: " + magicIndex));
     }
 
     @Override
     public List<MagicDisplayDTO> searchMagic(String query) {
-        return magicRepository.findBySpellNameContaining(query).stream()
-            .map(this::mapToDisplayDTO)
-            .collect(Collectors.toList());
+        return magicDataToDtoMapper.toDtoList(magicRepository.findBySpellNameContaining(query));
     }
 
     @Override
@@ -279,24 +213,20 @@ public class MagicEditorService implements MagicEditorUseCase {
     }
 
     @Override
-    public void resetMagicToOriginal(int magicId) {
+    public void resetMagicToOriginal(int magicIndex) {
         // For simplified repository, we'll just delete and reload from kernel
-        magicRepository.deleteById(magicId);
+        magicRepository.deleteByIndex(magicIndex);
     }
 
     @Override
-    public List<String> getMagicIdList() {
+    public List<String> getMagicIndexList() {
         // Get magic data from repository in kernel order (sorted by ID)
         List<MagicData> allMagic = magicRepository.findAll();
         
-        if (allMagic.isEmpty()) {
-            throw new IllegalStateException("No magic data loaded in repository");
-        }
-        
         // Sort by magic ID to ensure kernel order and format as "ID - Name"
         return allMagic.stream()
-            .sorted((m1, m2) -> Integer.compare(m1.getMagicID(), m2.getMagicID()))
-            .map(magic -> String.format("%03d - %s", magic.getMagicID(), magic.getExtractedSpellName()))
+            .sorted((m1, m2) -> Integer.compare(m1.getIndex(), m2.getIndex()))
+            .map(magic -> String.format("%03d - %s", magic.getIndex(), magic.getExtractedSpellName()))
             .toList();
     }
 } 

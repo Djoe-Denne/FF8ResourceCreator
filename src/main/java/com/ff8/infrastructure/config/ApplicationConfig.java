@@ -8,6 +8,8 @@ import com.ff8.application.ports.secondary.BinaryParserPort;
 import com.ff8.application.ports.secondary.FileSystemPort;
 import com.ff8.application.ports.secondary.MagicRepository;
 import com.ff8.application.ports.secondary.UserPreferencesPort;
+import com.ff8.application.mappers.DtoToMagicDataMapper;
+import com.ff8.application.mappers.MagicDataToDtoMapper;
 import com.ff8.application.services.KernelFileService;
 import com.ff8.application.services.MagicEditorService;
 import com.ff8.application.services.RawDataViewService;
@@ -40,6 +42,10 @@ public class ApplicationConfig {
     private final MagicValidationService magicValidationService;
     private final RawDataMappingService rawDataMappingService;
     
+    // Application mappers
+    private final MagicDataToDtoMapper magicDataToDtoMapper;
+    private final DtoToMagicDataMapper dtoToMagicDataMapper;
+    
     // Application services (implementing primary ports)
     private final MagicEditorUseCase magicEditorService;
     private final KernelFileUseCase kernelFileService;
@@ -58,17 +64,24 @@ public class ApplicationConfig {
         this.magicValidationService = new MagicValidationService();
         this.rawDataMappingService = new RawDataMappingService();
         
+        // Initialize application mappers
+        this.magicDataToDtoMapper = new MagicDataToDtoMapper();
+        this.dtoToMagicDataMapper = new DtoToMagicDataMapper();
+        
         // Initialize application services (implementing primary ports)
         this.magicEditorService = new MagicEditorService(
             magicRepositoryAdapter, 
             magicValidationService,
-            fileSystemAdapter
+            fileSystemAdapter,
+            magicDataToDtoMapper,
+            dtoToMagicDataMapper
         );
         
         this.kernelFileService = new KernelFileService(
             binaryParserAdapter,
             fileSystemAdapter,
-            magicRepositoryAdapter
+            magicRepositoryAdapter,
+            magicDataToDtoMapper
         );
         
         this.userPreferencesService = new UserPreferencesService(
@@ -151,6 +164,16 @@ public class ApplicationConfig {
     
     public RawDataMappingService getRawDataMappingService() {
         return rawDataMappingService;
+    }
+    
+    // Getters for application mappers
+    
+    public MagicDataToDtoMapper getMagicDataToDtoMapper() {
+        return magicDataToDtoMapper;
+    }
+    
+    public DtoToMagicDataMapper getDtoToMagicDataMapper() {
+        return dtoToMagicDataMapper;
     }
     
     /**

@@ -3,6 +3,8 @@ package com.ff8.infrastructure.adapters.primary.ui.controllers;
 import com.ff8.application.dto.MagicDisplayDTO;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.domain.entities.enums.GF;
+import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.gf.GFCompatibilityUICommand;
 import com.ff8.infrastructure.config.ApplicationConfig;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -110,23 +112,39 @@ public class GFCompatibilityController implements Initializable {
     }
     
     private void setupChangeListeners() {
-        // Add change listeners to all GF compatibility spinners
-        quezacotlSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        shivaSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        ifritSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        sirenSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        brothersSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        diablosSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        carbuncleSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        leviathanSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        pandemonaSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        cerberusSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        alexanderSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        doomtrainSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        bahamutSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        cactuarSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        tonberrySpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        edenSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Add change listeners to all GF compatibility spinners using command pattern
+        quezacotlSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.QUEZACOLT), newVal));
+        shivaSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.SHIVA), newVal));
+        ifritSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.IFRIT), newVal));
+        sirenSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.SIREN), newVal));
+        brothersSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.BROTHERS), newVal));
+        diablosSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.DIABLOS), newVal));
+        carbuncleSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.CARBUNCLE), newVal));
+        leviathanSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.LEVIATHAN), newVal));
+        pandemonaSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.PANDEMONA), newVal));
+        cerberusSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.CERBERUS), newVal));
+        alexanderSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.ALEXANDER), newVal));
+        doomtrainSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.DOOMTRAIN), newVal));
+        bahamutSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.BAHAMUT), newVal));
+        cactuarSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.CACTUAR), newVal));
+        tonberrySpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.TONBERRY), newVal));
+        edenSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new GFCompatibilityUICommand(magicEditorUseCase, getCurrentMagicIndex(), GF.EDEN), newVal));
     }
     
     private void loadMagicData(MagicDisplayDTO magic) {
@@ -207,14 +225,33 @@ public class GFCompatibilityController implements Initializable {
         edenSpinner.setDisable(!enabled);
     }
     
-    private void onFieldChanged() {
+
+    
+    /**
+     * Execute a UI command for field changes.
+     * This follows the Command Pattern for encapsulating user actions.
+     * 
+     * @param command the command to execute
+     * @param newValue the new value from the UI
+     */
+    private void onFieldChange(UICommand<Double> command, Double newValue) {
         if (updatingFromModel || currentMagic == null) {
             return;
         }
         
         try {
-            // Validate and save changes
-            validateAndSave();
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            // The command will handle validation, use case invocation, and domain updates
+            // Observer pattern will handle UI updates automatically
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
             
             // Mark main controller as having changes
             if (mainController != null) {
@@ -222,18 +259,17 @@ public class GFCompatibilityController implements Initializable {
             }
             
         } catch (Exception e) {
-            logger.error("Error saving GF compatibility changes", e);
-            showError("Failed to save GF compatibility changes", e.getMessage());
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
+            showError("Failed to save changes", e.getMessage());
         }
     }
     
-    private void validateAndSave() {
-        // Create updated GF compatibility data and save
-        logger.debug("Validating and saving GF compatibility changes for magic");
-        
-        // For now, just log the changes
-        logger.info("GF Compatibility updated - Quezacolt: {}, Shiva: {}, Ifrit: {}", 
-            quezacotlSpinner.getValue(), shivaSpinner.getValue(), ifritSpinner.getValue());
+    /**
+     * Get the current magic index for command creation.
+     * @return the current magic index (unique identifier), or -1 if no magic is selected
+     */
+    private int getCurrentMagicIndex() {
+        return currentMagic != null ? currentMagic.index() : -1;
     }
     
     private void showError(String message, String details) {

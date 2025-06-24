@@ -17,13 +17,6 @@ public interface MagicRepository {
     Optional<MagicData> findByIndex(int index);
 
     /**
-     * Find magic data by ID (may not be unique - returns first occurrence)
-     * @deprecated Use findByIndex instead for unique identification
-     */
-    @Deprecated
-    Optional<MagicData> findById(int magicId);
-
-    /**
      * Save or update magic data
      */
     void save(MagicData magicData);
@@ -91,13 +84,6 @@ public interface MagicRepository {
      * Get original (unmodified) magic data by kernel index
      */
     Optional<MagicData> getOriginalByIndex(int index);
-
-    /**
-     * Get original (unmodified) magic data by ID (may not be unique)
-     * @deprecated Use getOriginalByIndex instead for unique identification
-     */
-    @Deprecated
-    Optional<MagicData> getOriginalById(int magicId);
 
     /**
      * Reset magic data to original state by kernel index

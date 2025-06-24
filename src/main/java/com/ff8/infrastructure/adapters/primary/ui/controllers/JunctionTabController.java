@@ -4,6 +4,13 @@ import com.ff8.application.dto.MagicDisplayDTO;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.domain.entities.enums.Element;
 import com.ff8.domain.entities.enums.StatusEffect;
+import com.ff8.infrastructure.adapters.primary.ui.commands.UICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.IntegerFieldUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.junction.ElementalAttackJunctionUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.junction.ElementalDefenseJunctionUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.junction.JunctionStatUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.junction.StatusEffectAttackJunctionUICommand;
+import com.ff8.infrastructure.adapters.primary.ui.commands.junction.StatusEffectDefenseJunctionUICommand;
 import com.ff8.infrastructure.config.ApplicationConfig;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -155,7 +162,7 @@ public class JunctionTabController implements Initializable {
             int percentage = newVal.intValue();
             elementalAttackLabel.setText(percentage + "%");
             if (!updatingFromModel) {
-                onFieldChanged();
+                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldUICommand.IntegerFieldType.ELEMENTAL_ATTACK_VALUE, getCurrentMagicIndex()), newVal.intValue());
             }
         });
         
@@ -164,7 +171,7 @@ public class JunctionTabController implements Initializable {
             int percentage = newVal.intValue();
             elementalDefenseLabel.setText(percentage + "%");
             if (!updatingFromModel) {
-                onFieldChanged();
+                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldUICommand.IntegerFieldType.ELEMENTAL_DEFENSE_VALUE, getCurrentMagicIndex()), newVal.intValue());
             }
         });
         
@@ -173,7 +180,7 @@ public class JunctionTabController implements Initializable {
             int percentage = newVal.intValue();
             statusAttackLabel.setText(percentage + "%");
             if (!updatingFromModel) {
-                onFieldChanged();
+                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldUICommand.IntegerFieldType.STATUS_ATTACK_VALUE, getCurrentMagicIndex()), newVal.intValue());
             }
         });
         
@@ -182,64 +189,110 @@ public class JunctionTabController implements Initializable {
             int percentage = newVal.intValue();
             statusDefenseLabel.setText(percentage + "%");
             if (!updatingFromModel) {
-                onFieldChanged();
+                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldUICommand.IntegerFieldType.STATUS_DEFENSE_VALUE, getCurrentMagicIndex()), newVal.intValue());
             }
         });
     }
     
     private void setupChangeListeners() {
-        // Junction stat spinners
-        hpJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        strJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        vitJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        magJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        sprJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        spdJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        evaJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        hitJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        luckJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        // Junction stat spinners using command pattern
+        hpJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.HP), newVal));
+        strJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.STR), newVal));
+        vitJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.VIT), newVal));
+        magJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.MAG), newVal));
+        sprJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.SPR), newVal));
+        spdJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.SPD), newVal));
+        evaJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.EVA), newVal));
+        hitJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.HIT), newVal));
+        luckJunctionSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new JunctionStatUICommand(magicEditorUseCase, getCurrentMagicIndex(), JunctionStatUICommand.JunctionStatType.LUCK), newVal));
         
         // Elemental attack radio buttons
-        elementalAttackToggleGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> onFieldChanged());
+        elementalAttackToggleGroup.selectedToggleProperty().addListener((obs, oldToggle, newToggle) -> {
+            if (newToggle != null) {
+                onFieldChange(new ElementalAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), (Element) newToggle.getToggleGroup().getSelectedToggle().getUserData());
+            }
+        });
         
         // Elemental defense checkboxes
-        fireDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        iceDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        thunderDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        earthDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        poisonDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        windDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        waterDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        holyDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        fireDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.FIRE));
+        iceDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.ICE));
+        thunderDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.THUNDER));
+        earthDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.EARTH));
+        poisonDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.POISON));
+        windDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.WIND));
+        waterDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.WATER));
+        holyDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new ElementalDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), Element.HOLY));
         
         // Status attack checkboxes
-        junctionDeathCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionPoisonCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionPetrifyCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionDarknessCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSilenceCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionBerserkCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionZombieCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSleepCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSlowCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionStopCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionConfusionCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionDrainCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        junctionDeathCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DEATH));
+        junctionPoisonCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.POISON));
+        junctionPetrifyCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.PETRIFY));
+        junctionDarknessCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DARKNESS));
+        junctionSilenceCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SILENCE));
+        junctionBerserkCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.BERSERK));
+        junctionZombieCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.ZOMBIE));
+        junctionSleepCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLEEP));
+        junctionSlowCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLOW));
+        junctionStopCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.STOP));
+        junctionConfusionCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CONFUSION));
+        junctionDrainCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectAttackJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DRAIN));
         
         // Status defense checkboxes
-        junctionDeathDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionPoisonDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionPetrifyDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionDarknessDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSilenceDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionBerserkDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionZombieDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSleepDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionSlowDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionStopDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionCurseDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionConfusionDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
-        junctionDrainDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> onFieldChanged());
+        junctionDeathDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DEATH));
+        junctionPoisonDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.POISON));
+        junctionPetrifyDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.PETRIFY));
+        junctionDarknessDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DARKNESS));
+        junctionSilenceDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SILENCE));
+        junctionBerserkDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.BERSERK));
+        junctionZombieDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.ZOMBIE));
+        junctionSleepDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLEEP));
+        junctionSlowDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.SLOW));
+        junctionStopDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.STOP));
+        junctionCurseDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CURSE));
+        junctionConfusionDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.CONFUSION));
+        junctionDrainDefenseCheck.selectedProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new StatusEffectDefenseJunctionUICommand(magicEditorUseCase, getCurrentMagicIndex()), StatusEffect.DRAIN));
     }
     
     private void loadMagicData(MagicDisplayDTO magic) {
@@ -467,14 +520,28 @@ public class JunctionTabController implements Initializable {
         statusDefenseSlider.setDisable(!enabled);
     }
     
-    private void onFieldChanged() {
+
+    
+    /**
+     * Execute a UI command for Integer field changes.
+     * This follows the Command Pattern for encapsulating user actions.
+     */
+    private <T> void onFieldChange(UICommand<T> command, T newValue) {
         if (updatingFromModel || currentMagic == null) {
             return;
         }
         
         try {
-            // Validate and save changes
-            validateAndSave();
+            // Validate the new value first
+            if (!command.validate(newValue)) {
+                logger.warn("Invalid value {} for command: {}", newValue, command.getDescription());
+                showError("Invalid value", "The entered value is not valid for this field.");
+                return;
+            }
+            
+            // Execute the command through the domain layer
+            logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
+            command.execute(newValue);
             
             // Mark main controller as having changes
             if (mainController != null) {
@@ -482,20 +549,20 @@ public class JunctionTabController implements Initializable {
             }
             
         } catch (Exception e) {
-            logger.error("Error saving junction changes", e);
-            showError("Failed to save junction changes", e.getMessage());
+            logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
+            showError("Failed to save changes", e.getMessage());
         }
     }
     
-    private void validateAndSave() {
-        // Create updated junction data and save
-        logger.debug("Validating and saving junction changes for magic");
-        
-        // For now, just log the changes
-        logger.info("Junction updated - HP: {}, STR: {}, VIT: {}", 
-            hpJunctionSpinner.getValue(), strJunctionSpinner.getValue(), vitJunctionSpinner.getValue());
+    /**
+     * Get the current magic ID for command creation.
+     * @return the current magic ID, or -1 if no magic is selected
+     */
+    private int getCurrentMagicIndex() {
+        return currentMagic != null ? currentMagic.index() : -1;
     }
     
+   
     private void showError(String message, String details) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");

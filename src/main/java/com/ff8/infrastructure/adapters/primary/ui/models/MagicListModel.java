@@ -1,6 +1,10 @@
 package com.ff8.infrastructure.adapters.primary.ui.models;
 
 import com.ff8.application.dto.MagicDisplayDTO;
+import com.ff8.domain.events.KernelReadEvent;
+import com.ff8.domain.events.MagicDataChangeEvent;
+import com.ff8.domain.observers.Observer;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -15,8 +19,10 @@ import java.util.function.Predicate;
 /**
  * Observable model for magic list state management.
  * Provides data binding for the magic list view and filtering capabilities.
+ * Implements Observer pattern to automatically update when kernel files are loaded
+ * and when individual magic data is modified.
  */
-public class MagicListModel {
+public class MagicListModel implements Observer<KernelReadEvent> {
     private static final Logger logger = LoggerFactory.getLogger(MagicListModel.class);
     
     // Observable properties
@@ -76,15 +82,29 @@ public class MagicListModel {
      */
     public void updateMagic(MagicDisplayDTO updatedMagic) {
         int index = -1;
+        MagicDisplayDTO oldMagic = null;
         for (int i = 0; i < allMagic.size(); i++) {
             if (allMagic.get(i).index() == updatedMagic.index()) {
                 index = i;
+                oldMagic = allMagic.get(i);
                 break;
             }
         }
         
         if (index >= 0) {
+            // Check if the old magic was selected before updating
+            boolean wasSelected = selectedMagic.get() != null && 
+                                selectedMagic.get().index() == updatedMagic.index();
+            
+            // Update the magic data
             allMagic.set(index, updatedMagic);
+            
+            // Restore selection if the updated magic was previously selected
+            if (wasSelected) {
+                selectedMagic.set(updatedMagic);
+                logger.debug("Preserved selection for updated magic at kernel index {}", updatedMagic.index());
+            }
+            
             logger.debug("Updated magic at list position {}, kernel index {}: {}", 
                         index, updatedMagic.index(), updatedMagic.spellName());
         } else {
@@ -225,5 +245,85 @@ public class MagicListModel {
      */
     public int getFilteredCount() {
         return filteredMagic.size();
+    }
+    
+    /**
+     * Observer implementation for MagicDataChangeEvent - automatically update when magic data is modified
+     */
+    public void updateMagicData(MagicDataChangeEvent changeEvent) {
+        logger.info("MagicListModel received MagicDataChangeEvent: {} for magic index {} ({})", 
+                   changeEvent.getChangeType(), changeEvent.getMagicIndex(), 
+                   changeEvent.getUpdatedMagicData().spellName());
+        
+        // Update must happen on JavaFX Application Thread
+        Platform.runLater(() -> {
+            try {
+                switch (changeEvent.getChangeType()) {
+                    case "update":
+                        // Update existing magic entry
+                        updateMagic(changeEvent.getUpdatedMagicData());
+                        break;
+                    case "create":
+                    case "duplicate":
+                        // Add new magic entry - for now just add to the list
+                        // A more sophisticated implementation might refresh the entire list
+                        allMagic.add(changeEvent.getUpdatedMagicData());
+                        logger.info("Added new magic to list: {}", changeEvent.getUpdatedMagicData().spellName());
+                        break;
+                    default:
+                        logger.warn("Unknown change type: {}", changeEvent.getChangeType());
+                        break;
+                }
+                
+                logger.debug("MagicListModel updated from MagicDataChangeEvent for index {}", 
+                           changeEvent.getMagicIndex());
+            } catch (Exception e) {
+                logger.error("Failed to update MagicListModel from MagicDataChangeEvent", e);
+            }
+        });
+    }
+    
+    /**
+     * Error handling for MagicDataChangeEvent
+     */
+    public void onMagicDataChangeError(Throwable error, MagicDataChangeEvent changeEvent) {
+        logger.error("MagicListModel error processing MagicDataChangeEvent for magic index {}", 
+                    changeEvent.getMagicIndex(), error);
+    }
+    
+    /**
+     * Observer implementation - automatically update when kernel files are loaded
+     */
+    @Override
+    public void update(KernelReadEvent changeEvent) {
+        logger.info("MagicListModel received KernelReadEvent: {} magic spells from {}", 
+                   changeEvent.getMagicCount(), changeEvent.getFilePath());
+        
+        // Update must happen on JavaFX Application Thread
+        Platform.runLater(() -> {
+            try {
+                // Update the magic list with data from the event
+                setMagicList(changeEvent.getMagicData());
+                
+                logger.info("MagicListModel automatically updated with {} magic spells", 
+                           changeEvent.getMagicCount());
+            } catch (Exception e) {
+                logger.error("Failed to update MagicListModel from KernelReadEvent", e);
+                // Clear the list on error to avoid inconsistent state
+                clearMagic();
+            }
+        });
+    }
+    
+    /**
+     * Observer error handling
+     */
+    @Override
+    public void onError(Throwable error, KernelReadEvent changeEvent) {
+        logger.error("MagicListModel error processing KernelReadEvent from {}", 
+                    changeEvent.getFilePath(), error);
+        
+        // Clear the list on error to ensure clean state
+        Platform.runLater(this::clearMagic);
     }
 } 

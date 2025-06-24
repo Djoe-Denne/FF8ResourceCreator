@@ -22,13 +22,13 @@ public class RawDataViewService implements RawDataViewUseCase {
     }
     
     @Override
-    public Optional<RawViewDTO> getRawView(int magicId) {
-        return magicRepository.findById(magicId)
+    public Optional<RawViewDTO> getRawView(int magicIndex) {
+        return magicRepository.findByIndex(magicIndex)
                 .map(rawDataMappingService::mapToRawView);
     }
     
     @Override
-    public boolean magicExists(int magicId) {
-        return magicRepository.findById(magicId).isPresent();
+    public boolean magicExists(int magicIndex) {
+        return magicRepository.findByIndex(magicIndex).isPresent();
     }
 } 

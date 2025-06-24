@@ -2,11 +2,13 @@ package com.ff8.application.dto;
 
 import com.ff8.domain.entities.enums.Element;
 import java.util.List;
+import lombok.With;
 
 /**
  * Data Transfer Object for junction elemental bonuses.
  * Uses Java 21 record for immutability.
  */
+@With
 public record JunctionElementalDTO(
         Element attackElement,
         int attackValue,
@@ -53,42 +55,6 @@ public record JunctionElementalDTO(
     public boolean hasAnyEffects() {
         return hasElementalAttack() || hasElementalDefense();
     }
-
-    /**
-     * Check if defends against specific element
-     */
-    public boolean defendsAgainst(Element element) {
-        return defenseElements.contains(element);
-    }
-
-    /**
-     * Create a copy with modified attack element
-     */
-    public JunctionElementalDTO withAttackElement(Element newElement) {
-        return new JunctionElementalDTO(newElement, attackValue, defenseElements, defenseValue);
-    }
-
-    /**
-     * Create a copy with modified attack value
-     */
-    public JunctionElementalDTO withAttackValue(int newValue) {
-        return new JunctionElementalDTO(attackElement, newValue, defenseElements, defenseValue);
-    }
-
-    /**
-     * Create a copy with modified defense elements
-     */
-    public JunctionElementalDTO withDefenseElements(List<Element> newElements) {
-        return new JunctionElementalDTO(attackElement, attackValue, newElements, defenseValue);
-    }
-
-    /**
-     * Create a copy with modified defense value
-     */
-    public JunctionElementalDTO withDefenseValue(int newValue) {
-        return new JunctionElementalDTO(attackElement, attackValue, defenseElements, newValue);
-    }
-
     /**
      * Add element to defense
      */
@@ -98,7 +64,7 @@ public record JunctionElementalDTO(
         }
         var newElements = new java.util.ArrayList<>(defenseElements);
         newElements.add(element);
-        return new JunctionElementalDTO(attackElement, attackValue, newElements, defenseValue);
+        return withDefenseElements(newElements);
     }
 
     /**
@@ -108,7 +74,7 @@ public record JunctionElementalDTO(
         var newElements = defenseElements.stream()
                 .filter(e -> e != element)
                 .toList();
-        return new JunctionElementalDTO(attackElement, attackValue, newElements, defenseValue);
+        return withDefenseElements(newElements);
     }
 
     /**

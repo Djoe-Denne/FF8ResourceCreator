@@ -13,14 +13,25 @@ import java.util.Optional;
 public interface MagicEditorUseCase {
 
     /**
-     * Get magic data by ID for display
+     * Get magic data by index for display
      */
-    Optional<MagicDisplayDTO> getMagicData(int magicId);
+    Optional<MagicDisplayDTO> getMagicData(int magicIndex);
 
     /**
      * Update magic data from UI input
      */
-    void updateMagicData(int magicId, MagicDisplayDTO data) throws InvalidMagicDataException;
+    void updateMagicData(int magicIndex, MagicDisplayDTO data) throws InvalidMagicDataException;
+    
+    /**
+     * Update magic data with validation and return the updated DTO for UI synchronization.
+     * This ensures that UI changes are properly validated and reflected back to the UI layer.
+     * 
+     * @param magicIndex the index of the magic to update
+     * @param updatedData the updated magic data from the UI
+     * @return the updated MagicDisplayDTO with any domain-level changes applied
+     * @throws InvalidMagicDataException if the update fails validation
+     */
+    MagicDisplayDTO updateAndGetMagicData(int magicIndex, MagicDisplayDTO updatedData) throws InvalidMagicDataException;
 
     /**
      * Get all magic data for display
@@ -50,7 +61,7 @@ public interface MagicEditorUseCase {
     /**
      * Reset a magic spell to its original state
      */
-    void resetMagicToOriginal(int magicId);
+    void resetMagicToOriginal(int magicIndex);
 
     /**
      * Create a new magic spell (if supported)
@@ -60,12 +71,12 @@ public interface MagicEditorUseCase {
     /**
      * Duplicate an existing magic spell
      */
-    MagicDisplayDTO duplicateMagic(int sourceMagicId, String newName) throws InvalidMagicDataException;
+    MagicDisplayDTO duplicateMagic(int sourceMagicIndex, String newName) throws InvalidMagicDataException;
 
     /**
      * Get list of all magic IDs and names for UI dropdowns
      */
-    List<String> getMagicIdList();
+    List<String> getMagicIndexList();
 
     /**
      * Record for validation results

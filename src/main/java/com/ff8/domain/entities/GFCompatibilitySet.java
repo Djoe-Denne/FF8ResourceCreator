@@ -1,15 +1,19 @@
 package com.ff8.domain.entities;
 
 import com.ff8.domain.entities.enums.GF;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Represents GF compatibility values using Java 21 features.
  * Each GF has a compatibility value from 0-255.
  */
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(callSuper = false, includeFieldNames = false)
 public final class GFCompatibilitySet {
+    @EqualsAndHashCode.Include
     private final Map<GF, Integer> compatibilities;
 
     public GFCompatibilitySet() {
@@ -168,18 +172,5 @@ public final class GFCompatibilitySet {
     public String toDisplayString() {
         var goodCompatibilities = getGoodCompatibilities();
         return "GFCompatibilitySet{goodCompatibilities=" + goodCompatibilities + "}";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        GFCompatibilitySet that = (GFCompatibilitySet) o;
-        return Objects.equals(compatibilities, that.compatibilities);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(compatibilities);
     }
 } 
