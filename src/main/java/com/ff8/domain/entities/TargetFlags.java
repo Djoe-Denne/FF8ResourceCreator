@@ -1,5 +1,6 @@
 package com.ff8.domain.entities;
 
+import com.ff8.domain.entities.enums.TargetFlag;
 import java.util.List;
 
 /**
@@ -39,59 +40,54 @@ public final class TargetFlags extends AbstractBitFlags implements BinarySeriali
     }
 
     /**
-     * Target flag properties based on FF8 specifications
+     * Set a specific target flag using enum
      */
-    public boolean isDead() { return getBit(0); }
-    public void setDead(boolean value) { setBit(0, value); }
-
-    public boolean isBit1() { return getBit(1); }
-    public void setBit1(boolean value) { setBit(1, value); }
-
-    public boolean isBit2() { return getBit(2); }
-    public void setBit2(boolean value) { setBit(2, value); }
-
-    public boolean isSingleSide() { return getBit(3); }
-    public void setSingleSide(boolean value) { setBit(3, value); }
-
-    public boolean isSingle() { return getBit(4); }
-    public void setSingle(boolean value) { setBit(4, value); }
-
-    public boolean isBit5() { return getBit(5); }
-    public void setBit5(boolean value) { setBit(5, value); }
-
-    public boolean isEnemy() { return getBit(6); }
-    public void setEnemy(boolean value) { setBit(6, value); }
-
-    public boolean isBit7() { return getBit(7); }
-    public void setBit7(boolean value) { setBit(7, value); }
-
-    /**
-     * Get list of active target types as indices
-     */
-    public List<Integer> getActiveTargets() {
-        return getActiveBits();
+    public void setFlag(TargetFlag flag, boolean value) {
+        setBit(flag.getBitIndex(), value);
     }
 
     /**
-     * Check if any flags are set
+     * Get a specific target flag using enum
      */
-    public boolean hasAnyFlags() {
-        return !flagBits.isEmpty();
+    public boolean hasFlag(TargetFlag flag) {
+        return getBit(flag.getBitIndex());
     }
 
     /**
-     * Clear all flags
+     * Get list of all active target flags
      */
-    public void clear() {
-        flagBits.clear();
+    public List<TargetFlag> getActiveFlags() {
+        return getActiveBits().stream()
+                .map(TargetFlag::fromBitIndex)
+                .toList();
     }
+
+    /**
+     * Get list of only known active target flags
+     */
+    public List<TargetFlag> getKnownActiveFlags() {
+        return getActiveFlags().stream()
+                .filter(TargetFlag::isKnown)
+                .toList();
+    }
+
+    /**
+     * Convenient properties for common target flags
+     */
+    public boolean isDead() { return hasFlag(TargetFlag.DEAD); }
+    public void setDead(boolean value) { setFlag(TargetFlag.DEAD, value); }
+
+    public boolean isSingle() { return hasFlag(TargetFlag.SINGLE); }
+    public void setSingle(boolean value) { setFlag(TargetFlag.SINGLE, value); }
+
+    public boolean isSingleSide() { return hasFlag(TargetFlag.SINGLE_SIDE); }
+    public void setSingleSide(boolean value) { setFlag(TargetFlag.SINGLE_SIDE, value); }
+
+    public boolean isEnemy() { return hasFlag(TargetFlag.ENEMY); }
+    public void setEnemy(boolean value) { setFlag(TargetFlag.ENEMY, value); }
 
     @Override
     public String toString() {
-        return "TargetFlags{bits=" + getActiveTargets() + 
-               ", dead=" + isDead() + 
-               ", single=" + isSingle() + 
-               ", enemy=" + isEnemy() + 
-               ", singleSide=" + isSingleSide() + "}";
+        return "TargetFlags{activeFlags=" + getKnownActiveFlags() + "}";
     }
 } 

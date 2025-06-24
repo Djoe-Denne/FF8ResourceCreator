@@ -1,5 +1,6 @@
 package com.ff8.domain.entities;
 
+import com.ff8.domain.entities.enums.AttackFlag;
 import java.util.List;
 
 /**
@@ -39,59 +40,54 @@ public final class AttackFlags extends AbstractBitFlags implements BinarySeriali
     }
 
     /**
-     * Attack flag properties based on FF8 specifications
+     * Set a specific attack flag using enum
      */
-    public boolean isShelled() { return getBit(0); }
-    public void setShelled(boolean value) { setBit(0, value); }
-
-    public boolean isReflected() { return getBit(1); }
-    public void setReflected(boolean value) { setBit(1, value); }
-
-    public boolean isBit2() { return getBit(2); }
-    public void setBit2(boolean value) { setBit(2, value); }
-
-    public boolean isBreakDamageLimit() { return getBit(3); }
-    public void setBreakDamageLimit(boolean value) { setBit(3, value); }
-
-    public boolean isRevive() { return getBit(4); }
-    public void setRevive(boolean value) { setBit(4, value); }
-
-    public boolean isBit5() { return getBit(5); }
-    public void setBit5(boolean value) { setBit(5, value); }
-
-    public boolean isBit6() { return getBit(6); }
-    public void setBit6(boolean value) { setBit(6, value); }
-
-    public boolean isBit7() { return getBit(7); }
-    public void setBit7(boolean value) { setBit(7, value); }
-
-    /**
-     * Get list of active attack flags as indices
-     */
-    public List<Integer> getActiveFlags() {
-        return getActiveBits();
+    public void setFlag(AttackFlag flag, boolean value) {
+        setBit(flag.getBitIndex(), value);
     }
 
     /**
-     * Check if any flags are set
+     * Get a specific attack flag using enum
      */
-    public boolean hasAnyFlags() {
-        return !flagBits.isEmpty();
+    public boolean hasFlag(AttackFlag flag) {
+        return getBit(flag.getBitIndex());
     }
 
     /**
-     * Clear all flags
+     * Get list of all active attack flags
      */
-    public void clear() {
-        flagBits.clear();
+    public List<AttackFlag> getActiveFlags() {
+        return getActiveBits().stream()
+                .map(AttackFlag::fromBitIndex)
+                .toList();
     }
+
+    /**
+     * Get list of only known active attack flags
+     */
+    public List<AttackFlag> getKnownActiveFlags() {
+        return getActiveFlags().stream()
+                .filter(AttackFlag::isKnown)
+                .toList();
+    }
+
+    /**
+     * Convenient properties for common attack flags
+     */
+    public boolean isShelled() { return hasFlag(AttackFlag.SHELLED); }
+    public void setShelled(boolean value) { setFlag(AttackFlag.SHELLED, value); }
+
+    public boolean isReflected() { return hasFlag(AttackFlag.REFLECTED); }
+    public void setReflected(boolean value) { setFlag(AttackFlag.REFLECTED, value); }
+
+    public boolean isBreakDamageLimit() { return hasFlag(AttackFlag.BREAK_DAMAGE_LIMIT); }
+    public void setBreakDamageLimit(boolean value) { setFlag(AttackFlag.BREAK_DAMAGE_LIMIT, value); }
+
+    public boolean isRevive() { return hasFlag(AttackFlag.REVIVE); }
+    public void setRevive(boolean value) { setFlag(AttackFlag.REVIVE, value); }
 
     @Override
     public String toString() {
-        return "AttackFlags{bits=" + getActiveFlags() + 
-               ", shelled=" + isShelled() + 
-               ", reflected=" + isReflected() + 
-               ", breakDamageLimit=" + isBreakDamageLimit() + 
-               ", revive=" + isRevive() + "}";
+        return "AttackFlags{activeFlags=" + getKnownActiveFlags() + "}";
     }
 } 

@@ -2,7 +2,9 @@ package com.ff8.application.mappers;
 
 import com.ff8.application.dto.*;
 import com.ff8.domain.entities.*;
+import com.ff8.domain.entities.enums.AttackFlag;
 import com.ff8.domain.entities.enums.StatusEffect;
+import com.ff8.domain.entities.enums.TargetFlag;
 
 import java.util.List;
 
@@ -77,7 +79,7 @@ public class MagicDataToDtoMapper {
             targetFlags.isSingle(),
             targetFlags.isEnemy(),
             targetFlags.isSingleSide(),
-            targetFlags.getActiveTargets()
+            targetFlags.getActiveFlags().stream().map(TargetFlag::getBitIndex).toList()
         );
     }
     
@@ -94,7 +96,7 @@ public class MagicDataToDtoMapper {
             attackFlags.isReflected(),
             attackFlags.isBreakDamageLimit(),
             attackFlags.isRevive(),
-            attackFlags.getActiveFlags()
+            attackFlags.getActiveFlags().stream().map(AttackFlag::getBitIndex).toList()
         );
     }
     

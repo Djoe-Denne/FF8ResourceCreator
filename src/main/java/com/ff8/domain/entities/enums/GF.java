@@ -24,6 +24,15 @@ public enum GF {
     private final int index;
     private final String displayName;
 
+    // Static array for fast lookup by index
+    private static final GF[] BY_INDEX = new GF[16]; // 0-15
+    
+    static {
+        for (GF gf : values()) {
+            BY_INDEX[gf.index] = gf;
+        }
+    }
+
     GF(int index, String displayName) {
         this.index = index;
         this.displayName = displayName;
@@ -38,27 +47,12 @@ public enum GF {
     }
 
     /**
-     * Get GF by index using Java 21 pattern matching
+     * Get GF by index using array lookup for O(1) performance
      */
     public static GF fromIndex(int index) {
-        return switch (index) {
-            case 0 -> QUEZACOLT;
-            case 1 -> SHIVA;
-            case 2 -> IFRIT;
-            case 3 -> SIREN;
-            case 4 -> BROTHERS;
-            case 5 -> DIABLOS;
-            case 6 -> CARBUNCLE;
-            case 7 -> LEVIATHAN;
-            case 8 -> PANDEMONA;
-            case 9 -> CERBERUS;
-            case 10 -> ALEXANDER;
-            case 11 -> DOOMTRAIN;
-            case 12 -> BAHAMUT;
-            case 13 -> CACTUAR;
-            case 14 -> TONBERRY;
-            case 15 -> EDEN;
-            default -> throw new IllegalArgumentException("Invalid GF index: " + index);
-        };
+        if (index >= 0 && index < BY_INDEX.length && BY_INDEX[index] != null) {
+            return BY_INDEX[index];
+        }
+        throw new IllegalArgumentException("Invalid GF index: " + index);
     }
 } 
