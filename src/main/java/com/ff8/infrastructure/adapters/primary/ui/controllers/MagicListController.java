@@ -2,6 +2,7 @@ package com.ff8.infrastructure.adapters.primary.ui.controllers;
 
 import com.ff8.application.dto.MagicDisplayDTO;
 import com.ff8.infrastructure.adapters.primary.ui.models.MagicListModel;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -53,6 +54,13 @@ public class MagicListController implements Initializable {
     public void setMagicListModel(MagicListModel model) {
         this.magicListModel = model;
         logger.info("MagicListController: Setting magic list model");
+        
+        // Set refresh callback to trigger table refresh when new magic is added
+        model.setRefreshCallback(() -> {
+            logger.info("Triggering table refresh from model callback");
+            Platform.runLater(() -> magicTable.refresh());
+        });
+        
         setupBindings();
     }
     
@@ -92,6 +100,29 @@ public class MagicListController implements Initializable {
                 magicListModel.setSelectedMagic(newSelection);
             }
         });
+        
+        // Set row factory to apply styling for newly created magic
+        magicTable.setRowFactory(tv -> {
+            TableRow<MagicDisplayDTO> row = new TableRow<>() {
+                @Override
+                protected void updateItem(MagicDisplayDTO item, boolean empty) {
+                    super.updateItem(item, empty);
+                    
+                    // Remove existing style classes
+                    getStyleClass().removeAll("newly-created");
+                    
+                    if (item != null && !empty) {
+                        // Apply styling for newly created magic
+                        if (item.isNewlyCreated()) {
+                            getStyleClass().add("newly-created");
+                            logger.info("Applied 'newly-created' CSS class to magic: {} (index: {})", 
+                                       item.spellName(), item.index());
+                        }
+                    }
+                }
+            };
+            return row;
+        });
     }
     
     private void setupSearchField() {
@@ -117,9 +148,12 @@ public class MagicListController implements Initializable {
             }
         });
         
-        // Update count label
-        magicListModel.getSortedMagic().addListener((javafx.collections.ListChangeListener<MagicDisplayDTO>) change -> 
-            updateCountLabel());
+        // Update count label and refresh table when list changes
+        magicListModel.getSortedMagic().addListener((javafx.collections.ListChangeListener<MagicDisplayDTO>) change -> {
+            updateCountLabel();
+            // Force table refresh to ensure row styling is applied
+            javafx.application.Platform.runLater(() -> magicTable.refresh());
+        });
         updateCountLabel();
         
         logger.info("MagicListController bindings established");
@@ -151,6 +185,7 @@ public class MagicListController implements Initializable {
      * Refresh the table display
      */
     public void refresh() {
+        logger.info("Refreshing magic table display");
         magicTable.refresh();
     }
 } 

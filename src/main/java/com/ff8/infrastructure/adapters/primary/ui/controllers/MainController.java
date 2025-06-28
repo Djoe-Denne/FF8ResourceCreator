@@ -27,6 +27,7 @@ public class MainController implements Initializable {
     
     @FXML private MenuBar menuBar;
     @FXML private MenuItem openMenuItem;
+    @FXML private MenuItem newMagicMenuItem;
     @FXML private MenuItem saveMenuItem;
     @FXML private MenuItem saveAsMenuItem;
     @FXML private MenuItem exitMenuItem;
@@ -135,12 +136,14 @@ public class MainController implements Initializable {
     
     private void setupMenuActions() {
         openMenuItem.setOnAction(e -> openFile());
+        newMagicMenuItem.setOnAction(e -> createNewMagic());
         saveMenuItem.setOnAction(e -> saveFile());
         saveAsMenuItem.setOnAction(e -> saveAsFile());
         exitMenuItem.setOnAction(e -> exitApplication());
         aboutMenuItem.setOnAction(e -> showAbout());
         
-        // Initially disable save options
+        // Initially disable save and new magic options
+        newMagicMenuItem.setDisable(true);
         saveMenuItem.setDisable(true);
         saveAsMenuItem.setDisable(true);
     }
@@ -213,6 +216,72 @@ public class MainController implements Initializable {
             userPreferencesUseCase.updateLastOpenDirectory(file.getParentFile().toPath());
             saveKernelFile(file);
         }
+    }
+    
+    @FXML
+    private void createNewMagic() {
+        if (currentFile == null) {
+            showError("No file loaded", new IllegalStateException("Please load a kernel.bin file first"));
+            return;
+        }
+        
+        // Show dialog to get spell name
+        TextInputDialog dialog = new TextInputDialog("New Spell");
+        dialog.setTitle("Create New Magic");
+        dialog.setHeaderText("Create a new magic spell");
+        dialog.setContentText("Enter spell name:");
+        
+        dialog.showAndWait().ifPresent(spellName -> {
+            if (spellName.trim().isEmpty()) {
+                showError("Invalid spell name", new IllegalArgumentException("Spell name cannot be empty"));
+                return;
+            }
+            
+            try {
+                Task<Void> createTask = new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        updateMessage("Creating new magic...");
+                        updateProgress(0, 1);
+                        
+                        magicEditorUseCase.createNewMagic(spellName.trim());
+                        updateProgress(1, 1);
+                        
+                        javafx.application.Platform.runLater(() -> {
+                            markAsChanged();
+                            updateMessage("New magic created: " + spellName.trim());
+                        });
+                        
+                        return null;
+                    }
+                    
+                    @Override
+                    protected void failed() {
+                        javafx.application.Platform.runLater(() -> {
+                            showError("Failed to create new magic", getException());
+                            updateMessage("Failed to create new magic");
+                        });
+                    }
+                };
+                
+                // Bind progress and status using the same pattern as other operations
+                progressBar.progressProperty().bind(createTask.progressProperty());
+                statusLabel.textProperty().bind(createTask.messageProperty());
+                progressBar.visibleProperty().bind(createTask.runningProperty());
+                
+                // Run the task
+                Thread createThread = new Thread(createTask);
+                createThread.setDaemon(true);
+                createThread.start();
+                
+                logger.info("Started new magic creation task for: {}", spellName.trim());
+                
+            } catch (Exception e) {
+                statusLabel.setText("Error creating magic");
+                showError("Failed to create new magic", e);
+                logger.error("Error creating new magic: {}", spellName.trim(), e);
+            }
+        });
     }
     
     @FXML
@@ -351,6 +420,9 @@ public class MainController implements Initializable {
     private void updateUIState() {
         boolean hasFile = currentFile != null;
         
+        if (newMagicMenuItem != null) {
+            newMagicMenuItem.setDisable(!hasFile);
+        }
         if (saveMenuItem != null) {
             saveMenuItem.setDisable(!hasFile || !hasUnsavedChanges);
         }

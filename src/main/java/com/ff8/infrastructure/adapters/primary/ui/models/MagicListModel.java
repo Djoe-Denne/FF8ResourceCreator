@@ -34,6 +34,9 @@ public class MagicListModel implements Observer<KernelReadEvent> {
     private final StringProperty searchText = new SimpleStringProperty("");
     private final BooleanProperty hasData = new SimpleBooleanProperty(false);
     
+    // Callback for table refresh
+    private Runnable refreshCallback;
+    
     public MagicListModel() {
         setupBindings();
         logger.info("MagicListModel initialized");
@@ -248,6 +251,13 @@ public class MagicListModel implements Observer<KernelReadEvent> {
     }
     
     /**
+     * Set refresh callback for table updates
+     */
+    public void setRefreshCallback(Runnable refreshCallback) {
+        this.refreshCallback = refreshCallback;
+    }
+    
+    /**
      * Observer implementation for MagicDataChangeEvent - automatically update when magic data is modified
      */
     public void updateMagicData(MagicDataChangeEvent changeEvent) {
@@ -260,6 +270,7 @@ public class MagicListModel implements Observer<KernelReadEvent> {
             try {
                 switch (changeEvent.getChangeType()) {
                     case "update":
+                    case "translations_update":
                         // Update existing magic entry
                         updateMagic(changeEvent.getUpdatedMagicData());
                         break;
@@ -267,8 +278,15 @@ public class MagicListModel implements Observer<KernelReadEvent> {
                     case "duplicate":
                         // Add new magic entry - for now just add to the list
                         // A more sophisticated implementation might refresh the entire list
-                        allMagic.add(changeEvent.getUpdatedMagicData());
-                        logger.info("Added new magic to list: {}", changeEvent.getUpdatedMagicData().spellName());
+                        MagicDisplayDTO newMagic = changeEvent.getUpdatedMagicData();
+                        allMagic.add(newMagic);
+                        logger.info("Added new magic to list: {} (isNewlyCreated: {})", 
+                                   newMagic.spellName(), newMagic.isNewlyCreated());
+                        
+                        // Trigger table refresh to ensure styling is applied
+                        if (refreshCallback != null) {
+                            refreshCallback.run();
+                        }
                         break;
                     default:
                         logger.warn("Unknown change type: {}", changeEvent.getChangeType());

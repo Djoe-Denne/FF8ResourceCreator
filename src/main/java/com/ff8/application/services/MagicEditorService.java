@@ -8,6 +8,7 @@ import com.ff8.application.ports.secondary.MagicRepository;
 import com.ff8.application.ports.secondary.FileSystemPort;
 import com.ff8.application.dto.JunctionStatsDTO;
 import com.ff8.domain.entities.MagicData;
+import com.ff8.domain.entities.SpellTranslations;
 import com.ff8.domain.entities.enums.Element;
 import com.ff8.domain.entities.enums.AttackType;
 import com.ff8.domain.events.MagicDataChangeEvent;
@@ -65,6 +66,37 @@ public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> im
     }
 
     @Override
+    public void updateMagicTranslations(int magicIndex, SpellTranslations translations) throws InvalidMagicDataException {
+        MagicData originalMagic = magicRepository.findByIndex(magicIndex)
+            .orElseThrow(() -> new IllegalArgumentException("Magic with index " + magicIndex + " not found"));
+        
+        // Validate the translations (basic validation)
+        if (translations == null) {
+            throw new InvalidMagicDataException("Translations cannot be null");
+        }
+        
+        if (translations.getEnglishName().trim().isEmpty()) {
+            throw new InvalidMagicDataException("English spell name cannot be empty");
+        }
+        
+        // Update the magic with new translations
+        MagicData updatedMagic = originalMagic.withTranslations(translations);
+        
+        // Save the updated magic
+        magicRepository.save(updatedMagic);
+        
+        // Convert to DTO for event notification
+        MagicDisplayDTO updatedMagicDto = magicDataToDtoMapper.toDto(updatedMagic);
+        
+        // Emit event to notify observers of the translation change
+        MagicDataChangeEvent changeEvent = new MagicDataChangeEvent(magicIndex, updatedMagicDto, "translations_update");
+        notifyObservers(changeEvent);
+        
+        logger.info("Magic translations updated for index {} and event notified to {} observers", 
+                   magicIndex, getObserverCount());
+    }
+
+    @Override
     public List<MagicDisplayDTO> getAllMagic() {
         List<MagicData> allMagicData = magicRepository.findAll();
         logger.info("MagicEditorService.getAllMagic(): Repository contains {} magic entries", allMagicData.size());
@@ -95,6 +127,7 @@ public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> im
             .attackType(com.ff8.domain.entities.enums.AttackType.MAGIC_ATTACK)
             .drawResist(0)
             .hitCount(1)
+            .isNewlyCreated(true)
             .build();
         
         magicRepository.save(newMagic);
@@ -120,6 +153,7 @@ public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> im
         MagicData newMagic = source.toBuilder()
             .index(newIndex)
             .extractedSpellName(newName)
+            .isNewlyCreated(true)
             .build();
         
         magicRepository.save(newMagic);

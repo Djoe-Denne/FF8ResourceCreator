@@ -45,6 +45,7 @@ public class DtoToMagicDataMapper {
             .junctionElemental(mapJunctionElemental(dto.junctionElemental()))
             .junctionStatus(mapJunctionStatus(dto.junctionStatus()))
             .gfCompatibility(mapGFCompatibility(dto.gfCompatibility()))
+            .translations(dto.translations()) // Update translations
             
             // Preserve binary fields that shouldn't be modified from UI
             .index(originalMagic.getIndex()) // Preserve original index
@@ -57,6 +58,7 @@ public class DtoToMagicDataMapper {
             .unknown1(originalMagic.getUnknown1())
             .unknown2(originalMagic.getUnknown2())
             .unknown3(originalMagic.getUnknown3())
+            .isNewlyCreated(originalMagic.isNewlyCreated()) // Preserve creation flag
             .build();
     }
     
@@ -84,6 +86,7 @@ public class DtoToMagicDataMapper {
             // Set spell names (for new spells, these would be the same)
             .extractedSpellName(dto.spellName())
             .extractedSpellDescription(dto.spellDescription())
+            .translations(dto.translations()) // Set translations for new spells
             
             // Map complex objects
             .targetInfo(createTargetFlags(dto.targetInfo()))
@@ -101,6 +104,7 @@ public class DtoToMagicDataMapper {
             .unknown1(0) // Default values for unknown fields
             .unknown2(0)
             .unknown3(0)
+            .isNewlyCreated(true) // Mark as newly created
             .build();
     }
     

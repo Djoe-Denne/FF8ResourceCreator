@@ -2,6 +2,7 @@ package com.ff8.infrastructure.adapters.primary.ui.controllers;
 
 import com.ff8.application.dto.MagicDisplayDTO;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
+import com.ff8.domain.entities.SpellTranslations;
 import com.ff8.domain.entities.enums.AttackType;
 import com.ff8.domain.entities.enums.Element;
 import com.ff8.domain.entities.enums.StatusEffect;
@@ -15,15 +16,19 @@ import com.ff8.infrastructure.adapters.primary.ui.commands.general.StatusEffectA
 import com.ff8.infrastructure.adapters.primary.ui.commands.general.TargetFlagsUICommand;
 import com.ff8.infrastructure.adapters.primary.ui.commands.general.AttackFlagsUICommand.AttackFlagType;
 import com.ff8.infrastructure.adapters.primary.ui.commands.general.TargetFlagsUICommand.TargetFlagType;
+import com.ff8.infrastructure.adapters.primary.ui.dialogs.TranslationEditorDialog;
 import com.ff8.infrastructure.config.ApplicationConfig;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseEvent;
+import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -330,8 +335,15 @@ public class GeneralTabController implements Initializable {
             if (magic != null) {
                 // Populate basic fields
                 magicIdComboBox.setValue(magic.magicID() + " - " + magic.spellName());
-                spellNameField.setText(magic.spellName());
-                spellDescriptionField.setText(magic.spellDescription());
+                
+                // Display current spell name and description (from translations or extracted data)
+                if (magic.translations() != null) {
+                    spellNameField.setText(magic.translations().getEnglishName());
+                    spellDescriptionField.setText(magic.translations().getEnglishDescription());
+                } else {
+                    spellNameField.setText(magic.spellName());
+                    spellDescriptionField.setText(magic.spellDescription());
+                }
                 spellPowerSpinner.getValueFactory().setValue(magic.spellPower());
                 drawResistSpinner.getValueFactory().setValue(magic.drawResist());
                 hitCountSpinner.getValueFactory().setValue(magic.hitCount());
@@ -387,14 +399,188 @@ public class GeneralTabController implements Initializable {
                 attackBreakDamageLimitCheckBox.setSelected(magic.attackInfo().breakDamageLimit());
                 attackReviveCheckBox.setSelected(magic.attackInfo().revive());
                 
-                setControlsEnabled(true);
-                logger.debug("Loaded magic data: {}", magic.spellName());
+                // Set controls enabled based on whether this is newly created magic
+                setControlsForMagic(magic);
+                logger.debug("Loaded magic data: {} (newly created: {})", magic.spellName(), magic.isNewlyCreated());
             } else {
                 clearFields();
                 setControlsEnabled(false);
             }
         } finally {
             updatingFromModel = false;
+        }
+    }
+    
+    /**
+     * Set control states based on whether the magic is newly created or existing.
+     * Newly created magic is fully editable, existing magic is read-only.
+     */
+    private void setControlsForMagic(MagicDisplayDTO magic) {
+        boolean isEditable = magic.isNewlyCreated();
+        
+        // Basic controls - Magic ID is always editable (can change IDs)
+        magicIdComboBox.setDisable(false); // Always allow ID changes
+        elementComboBox.setDisable(!isEditable);
+        attackTypeComboBox.setDisable(!isEditable);
+        
+        // Spinners
+        spellPowerSpinner.setDisable(!isEditable);
+        drawResistSpinner.setDisable(!isEditable);
+        hitCountSpinner.setDisable(!isEditable);
+        statusAttackSpinner.setDisable(!isEditable);
+        
+        // Buttons
+        damageFormulaButton.setDisable(!isEditable);
+        damageChartButton.setDisable(!isEditable);
+        
+        // Apply read-only styling
+        applyReadOnlyStylesToControls(isEditable);
+        
+        // Target checkboxes
+        setTargetControlsEnabled(isEditable);
+        
+        // Status checkboxes  
+        setStatusControlsEnabled(isEditable);
+        
+        // Attack flag checkboxes
+        setAttackFlagControlsEnabled(isEditable);
+        
+        logger.debug("Set controls for magic - editable: {}", isEditable);
+    }
+    
+    /**
+     * Apply visual styling to indicate read-only state
+     */
+    private void applyReadOnlyStylesToControls(boolean isEditable) {
+        String readOnlyClass = "readonly-field";
+        
+        // Remove existing readonly class first
+        elementComboBox.getStyleClass().remove(readOnlyClass);
+        attackTypeComboBox.getStyleClass().remove(readOnlyClass);
+        spellPowerSpinner.getStyleClass().remove(readOnlyClass);
+        drawResistSpinner.getStyleClass().remove(readOnlyClass);
+        hitCountSpinner.getStyleClass().remove(readOnlyClass);
+        statusAttackSpinner.getStyleClass().remove(readOnlyClass);
+        
+        // Add readonly class if not editable
+        if (!isEditable) {
+            elementComboBox.getStyleClass().add(readOnlyClass);
+            attackTypeComboBox.getStyleClass().add(readOnlyClass);
+            spellPowerSpinner.getStyleClass().add(readOnlyClass);
+            drawResistSpinner.getStyleClass().add(readOnlyClass);
+            hitCountSpinner.getStyleClass().add(readOnlyClass);
+            statusAttackSpinner.getStyleClass().add(readOnlyClass);
+        }
+    }
+    
+    /**
+     * Enable/disable target controls based on editability
+     */
+    private void setTargetControlsEnabled(boolean enabled) {
+        targetDeadCheckBox.setDisable(!enabled);
+        targetSingleCheckBox.setDisable(!enabled);
+        targetEnemyCheckBox.setDisable(!enabled);
+        targetSingleSideCheckBox.setDisable(!enabled);
+        targetUnknown1CheckBox.setDisable(!enabled);
+        targetUnknown2CheckBox.setDisable(!enabled);
+        targetUnknown3CheckBox.setDisable(!enabled);
+        targetUnknown4CheckBox.setDisable(!enabled);
+        
+        // Apply styling
+        String readOnlyClass = "readonly-field";
+        applyCheckboxStyling(enabled, readOnlyClass, 
+            targetDeadCheckBox, targetSingleCheckBox, targetEnemyCheckBox, targetSingleSideCheckBox,
+            targetUnknown1CheckBox, targetUnknown2CheckBox, targetUnknown3CheckBox, targetUnknown4CheckBox);
+    }
+    
+    /**
+     * Enable/disable status effect controls based on editability
+     */
+    private void setStatusControlsEnabled(boolean enabled) {
+        statusSleepCheckBox.setDisable(!enabled);
+        statusHasteCheckBox.setDisable(!enabled);
+        statusSlowCheckBox.setDisable(!enabled);
+        statusStopCheckBox.setDisable(!enabled);
+        statusRegenCheckBox.setDisable(!enabled);
+        statusProtectCheckBox.setDisable(!enabled);
+        statusShellCheckBox.setDisable(!enabled);
+        statusReflectCheckBox.setDisable(!enabled);
+        statusAuraCheckBox.setDisable(!enabled);
+        statusCurseCheckBox.setDisable(!enabled);
+        statusDoomCheckBox.setDisable(!enabled);
+        statusInvincibleCheckBox.setDisable(!enabled);
+        statusFloatCheckBox.setDisable(!enabled);
+        statusPetrifyingCheckBox.setDisable(!enabled);
+        statusConfusionCheckBox.setDisable(!enabled);
+        statusDrainCheckBox.setDisable(!enabled);
+        statusEjectCheckBox.setDisable(!enabled);
+        statusDoubleCheckBox.setDisable(!enabled);
+        statusTripleCheckBox.setDisable(!enabled);
+        statusDefendCheckBox.setDisable(!enabled);
+        statusChargedCheckBox.setDisable(!enabled);
+        statusBackAttackCheckBox.setDisable(!enabled);
+        statusVit0CheckBox.setDisable(!enabled);
+        statusAngelWingCheckBox.setDisable(!enabled);
+        statusHasMagicCheckBox.setDisable(!enabled);
+        statusSummonGFCheckBox.setDisable(!enabled);
+        statusDeathCheckBox.setDisable(!enabled);
+        statusPoisonCheckBox.setDisable(!enabled);
+        statusPetrifyCheckBox.setDisable(!enabled);
+        statusDarknessCheckBox.setDisable(!enabled);
+        statusSilenceCheckBox.setDisable(!enabled);
+        statusBerserkCheckBox.setDisable(!enabled);
+        statusZombieCheckBox.setDisable(!enabled);
+        statusUnknown1CheckBox.setDisable(!enabled);
+        statusUnknown2CheckBox.setDisable(!enabled);
+        statusUnknown3CheckBox.setDisable(!enabled);
+        statusUnknown4CheckBox.setDisable(!enabled);
+        statusUnknown5CheckBox.setDisable(!enabled);
+        statusUnknown6CheckBox.setDisable(!enabled);
+        statusUnknown7CheckBox.setDisable(!enabled);
+        
+        // Apply styling
+        String readOnlyClass = "readonly-field";
+        applyCheckboxStyling(enabled, readOnlyClass,
+            statusSleepCheckBox, statusHasteCheckBox, statusSlowCheckBox, statusStopCheckBox, statusRegenCheckBox,
+            statusProtectCheckBox, statusShellCheckBox, statusReflectCheckBox, statusAuraCheckBox, statusCurseCheckBox,
+            statusDoomCheckBox, statusInvincibleCheckBox, statusFloatCheckBox, statusPetrifyingCheckBox, statusConfusionCheckBox,
+            statusDrainCheckBox, statusEjectCheckBox, statusDoubleCheckBox, statusTripleCheckBox, statusDefendCheckBox,
+            statusChargedCheckBox, statusBackAttackCheckBox, statusVit0CheckBox, statusAngelWingCheckBox,
+            statusHasMagicCheckBox, statusSummonGFCheckBox, statusDeathCheckBox, statusPoisonCheckBox, statusPetrifyCheckBox,
+            statusDarknessCheckBox, statusSilenceCheckBox, statusBerserkCheckBox, statusZombieCheckBox,
+            statusUnknown1CheckBox, statusUnknown2CheckBox, statusUnknown3CheckBox, statusUnknown4CheckBox,
+            statusUnknown5CheckBox, statusUnknown6CheckBox, statusUnknown7CheckBox);
+    }
+    
+    /**
+     * Enable/disable attack flag controls based on editability
+     */
+    private void setAttackFlagControlsEnabled(boolean enabled) {
+        attackShelledCheckBox.setDisable(!enabled);
+        attackReflectedCheckBox.setDisable(!enabled);
+        attackBreakDamageLimitCheckBox.setDisable(!enabled);
+        attackReviveCheckBox.setDisable(!enabled);
+        attackUnknown1CheckBox.setDisable(!enabled);
+        attackUnknown2CheckBox.setDisable(!enabled);
+        attackUnknown3CheckBox.setDisable(!enabled);
+        attackUnknown4CheckBox.setDisable(!enabled);
+        
+        // Apply styling
+        String readOnlyClass = "readonly-field";
+        applyCheckboxStyling(enabled, readOnlyClass,
+            attackShelledCheckBox, attackReflectedCheckBox, attackBreakDamageLimitCheckBox, attackReviveCheckBox,
+            attackUnknown1CheckBox, attackUnknown2CheckBox, attackUnknown3CheckBox, attackUnknown4CheckBox);
+    }
+    
+    /**
+     * Apply styling to checkboxes based on enabled state
+     */
+    private void applyCheckboxStyling(boolean enabled, String readOnlyClass, CheckBox... checkboxes) {
+        for (CheckBox checkbox : checkboxes) {
+            checkbox.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                checkbox.getStyleClass().add(readOnlyClass);
+            }
         }
     }
     
@@ -520,8 +706,6 @@ public class GeneralTabController implements Initializable {
         attackBreakDamageLimitCheckBox.setDisable(!enabled);
         attackReviveCheckBox.setDisable(!enabled);
     }
-    
-
     
     /**
      * Execute a UI command for Integer field changes.
@@ -665,6 +849,94 @@ public class GeneralTabController implements Initializable {
         alert.setHeaderText(message);
         alert.setContentText(details);
         alert.showAndWait();
+    }
+    
+    /**
+     * Handle click on spell name field to open translation editor
+     */
+    @FXML
+    private void onSpellNameClicked(MouseEvent event) {
+        if (currentMagic == null) {
+            return;
+        }
+        
+        try {
+            Stage stage = (Stage) spellNameField.getScene().getWindow();
+            SpellTranslations currentTranslations = currentMagic.translations() != null 
+                ? currentMagic.translations() 
+                : new SpellTranslations(currentMagic.spellName(), currentMagic.spellDescription());
+            
+            Optional<SpellTranslations> result = TranslationEditorDialog.showDialog(
+                stage, currentTranslations, "Spell Name");
+            
+            if (result.isPresent()) {
+                updateMagicTranslations(result.get());
+                logger.debug("Updated spell name translations");
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error opening spell name translation editor", e);
+            showError("Translation Editor Error", "Failed to open translation editor: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Handle click on spell description field to open translation editor
+     */
+    @FXML
+    private void onSpellDescriptionClicked(MouseEvent event) {
+        if (currentMagic == null) {
+            return;
+        }
+        
+        try {
+            Stage stage = (Stage) spellDescriptionField.getScene().getWindow();
+            SpellTranslations currentTranslations = currentMagic.translations() != null 
+                ? currentMagic.translations() 
+                : new SpellTranslations(currentMagic.spellName(), currentMagic.spellDescription());
+            
+            Optional<SpellTranslations> result = TranslationEditorDialog.showDialog(
+                stage, currentTranslations, "Spell Description");
+            
+            if (result.isPresent()) {
+                updateMagicTranslations(result.get());
+                logger.debug("Updated spell description translations");
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error opening spell description translation editor", e);
+            showError("Translation Editor Error", "Failed to open translation editor: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Update the magic translations and refresh the UI
+     */
+    private void updateMagicTranslations(SpellTranslations newTranslations) {
+        try {
+            // Update the magic data through the use case
+            magicEditorUseCase.updateMagicTranslations(getCurrentMagicIndex(), newTranslations);
+            
+            // Update the current DTO to reflect the changes
+            if (currentMagic != null) {
+                MagicDisplayDTO updatedMagic = currentMagic.withTranslations(newTranslations);
+                
+                // Update the display fields
+                spellNameField.setText(newTranslations.getEnglishName());
+                spellDescriptionField.setText(newTranslations.getEnglishDescription());
+                
+                // Mark as modified
+                if (mainController != null) {
+                    mainController.markAsChanged();
+                }
+                
+                logger.debug("Successfully updated translations for magic index: {}", getCurrentMagicIndex());
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error updating magic translations", e);
+            showError("Update Error", "Failed to update translations: " + e.getMessage());
+        }
     }
     
     @FXML

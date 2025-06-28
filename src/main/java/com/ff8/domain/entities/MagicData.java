@@ -70,6 +70,14 @@ public class MagicData {
     @Builder.Default
     String extractedSpellDescription = "";
 
+    // Internationalization support
+    @Builder.Default
+    SpellTranslations translations = null;
+
+    // Flag to indicate if this magic was newly created (not from original kernel file)
+    @Builder.Default
+    boolean isNewlyCreated = false;
+
     /**
      * Check if this is a curative spell
      */
@@ -94,6 +102,63 @@ public class MagicData {
                junctionStatus.hasStatusAttack() ||
                junctionStatus.hasStatusDefense() ||
                gfCompatibility.hasAnyGoodCompatibilities();
+    }
+
+    /**
+     * Get the current spell name (from translations if available, otherwise extracted)
+     */
+    public String getSpellName() {
+        if (translations != null) {
+            return translations.getEnglishName();
+        }
+        return extractedSpellName != null ? extractedSpellName : "";
+    }
+
+    /**
+     * Get the current spell description (from translations if available, otherwise extracted)
+     */
+    public String getSpellDescription() {
+        if (translations != null) {
+            return translations.getEnglishDescription();
+        }
+        return extractedSpellDescription != null ? extractedSpellDescription : "";
+    }
+
+    /**
+     * Get the spell translations, creating default ones if needed
+     */
+    public SpellTranslations getTranslations() {
+        if (translations != null) {
+            return translations;
+        }
+        // Create default translations from extracted data
+        return new SpellTranslations(
+            extractedSpellName != null ? extractedSpellName : "",
+            extractedSpellDescription != null ? extractedSpellDescription : ""
+        );
+    }
+
+    /**
+     * Update the spell translations
+     */
+    public MagicData withTranslations(SpellTranslations newTranslations) {
+        return this.toBuilder().translations(newTranslations).build();
+    }
+
+    /**
+     * Update both the spell name and description for English
+     */
+    public MagicData withSpellNameAndDescription(String name, String description) {
+        SpellTranslations currentTranslations = getTranslations();
+        SpellTranslations updatedTranslations = currentTranslations.withEnglishTranslation(name, description);
+        return withTranslations(updatedTranslations);
+    }
+
+    /**
+     * Check if this spell has custom translations (beyond just extracted data)
+     */
+    public boolean hasCustomTranslations() {
+        return translations != null && !translations.hasOnlyEnglish();
     }
 
     @Override

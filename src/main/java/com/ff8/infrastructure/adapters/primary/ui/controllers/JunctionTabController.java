@@ -388,8 +388,9 @@ public class JunctionTabController implements Initializable {
                 junctionDrainDefenseCheck.setSelected(defenseStatuses.contains(StatusEffect.DRAIN));
                 statusDefenseSlider.setValue(statusJunction.defenseValue());
                 
-                setControlsEnabled(true);
-                logger.debug("Loaded junction data for magic: {}", magic.spellName());
+                // Set controls enabled based on whether this is newly created magic
+                setControlsForMagic(magic);
+                logger.debug("Loaded junction data for magic: {} (newly created: {})", magic.spellName(), magic.isNewlyCreated());
             } else {
                 clearFields();
                 setControlsEnabled(false);
@@ -463,7 +464,109 @@ public class JunctionTabController implements Initializable {
     }
     
     private void setControlsEnabled(boolean enabled) {
+        if (enabled) {
+            // When enabling, we still need to respect whether magic is newly created
+            if (currentMagic != null) {
+                setControlsForMagic(currentMagic);
+            }
+        } else {
+            // When disabling completely (no magic selected), disable everything
+            setJunctionStatControlsEnabled(false);
+            setElementalControlsEnabled(false);
+            setStatusControlsEnabled(false);
+        }
+    }
+    
+    /**
+     * Set control states based on whether the magic is newly created or existing.
+     * Newly created magic is fully editable, existing magic is read-only.
+     */
+    private void setControlsForMagic(MagicDisplayDTO magic) {
+        boolean isEditable = magic.isNewlyCreated();
+        
+        // Apply read-only styling first
+        applyReadOnlyStylesToControls(isEditable);
+        
         // Junction stat spinners
+        setJunctionStatControlsEnabled(isEditable);
+        
+        // Elemental controls
+        setElementalControlsEnabled(isEditable);
+        
+        // Status controls
+        setStatusControlsEnabled(isEditable);
+        
+        logger.debug("Set junction controls for magic - editable: {}", isEditable);
+    }
+    
+    /**
+     * Apply visual styling to indicate read-only state
+     */
+    private void applyReadOnlyStylesToControls(boolean isEditable) {
+        String readOnlyClass = "readonly-field";
+        
+        // Junction stat spinners
+        applySpinnerStyling(isEditable, readOnlyClass,
+            hpJunctionSpinner, strJunctionSpinner, vitJunctionSpinner, magJunctionSpinner, sprJunctionSpinner,
+            spdJunctionSpinner, evaJunctionSpinner, hitJunctionSpinner, luckJunctionSpinner);
+        
+        // Sliders
+        applySliderStyling(isEditable, readOnlyClass,
+            elementalAttackSlider, elementalDefenseSlider, statusAttackSlider, statusDefenseSlider);
+    }
+    
+    /**
+     * Apply styling to spinners based on enabled state
+     */
+    private void applySpinnerStyling(boolean enabled, String readOnlyClass, Spinner<Integer>... spinners) {
+        for (Spinner<Integer> spinner : spinners) {
+            spinner.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                spinner.getStyleClass().add(readOnlyClass);
+            }
+        }
+    }
+    
+    /**
+     * Apply styling to sliders based on enabled state
+     */
+    private void applySliderStyling(boolean enabled, String readOnlyClass, Slider... sliders) {
+        for (Slider slider : sliders) {
+            slider.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                slider.getStyleClass().add(readOnlyClass);
+            }
+        }
+    }
+    
+    /**
+     * Apply styling to checkboxes based on enabled state
+     */
+    private void applyCheckboxStyling(boolean enabled, String readOnlyClass, CheckBox... checkboxes) {
+        for (CheckBox checkbox : checkboxes) {
+            checkbox.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                checkbox.getStyleClass().add(readOnlyClass);
+            }
+        }
+    }
+    
+    /**
+     * Apply styling to radio buttons based on enabled state
+     */
+    private void applyRadioButtonStyling(boolean enabled, String readOnlyClass, RadioButton... radioButtons) {
+        for (RadioButton radioButton : radioButtons) {
+            radioButton.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                radioButton.getStyleClass().add(readOnlyClass);
+            }
+        }
+    }
+    
+    /**
+     * Enable/disable junction stat controls based on editability
+     */
+    private void setJunctionStatControlsEnabled(boolean enabled) {
         hpJunctionSpinner.setDisable(!enabled);
         strJunctionSpinner.setDisable(!enabled);
         vitJunctionSpinner.setDisable(!enabled);
@@ -473,8 +576,13 @@ public class JunctionTabController implements Initializable {
         evaJunctionSpinner.setDisable(!enabled);
         hitJunctionSpinner.setDisable(!enabled);
         luckJunctionSpinner.setDisable(!enabled);
-        
-        // Elemental attack
+    }
+    
+    /**
+     * Enable/disable elemental controls based on editability
+     */
+    private void setElementalControlsEnabled(boolean enabled) {
+        // Elemental attack radio buttons
         fireAttackRadio.setDisable(!enabled);
         iceAttackRadio.setDisable(!enabled);
         thunderAttackRadio.setDisable(!enabled);
@@ -486,7 +594,7 @@ public class JunctionTabController implements Initializable {
         nonElementalAttackRadio.setDisable(!enabled);
         elementalAttackSlider.setDisable(!enabled);
         
-        // Elemental defense
+        // Elemental defense checkboxes
         fireDefenseCheck.setDisable(!enabled);
         iceDefenseCheck.setDisable(!enabled);
         thunderDefenseCheck.setDisable(!enabled);
@@ -497,7 +605,22 @@ public class JunctionTabController implements Initializable {
         holyDefenseCheck.setDisable(!enabled);
         elementalDefenseSlider.setDisable(!enabled);
         
-        // Status attack
+        // Apply styling
+        String readOnlyClass = "readonly-field";
+        applyRadioButtonStyling(enabled, readOnlyClass,
+            fireAttackRadio, iceAttackRadio, thunderAttackRadio, earthAttackRadio, poisonAttackRadio,
+            windAttackRadio, waterAttackRadio, holyAttackRadio, nonElementalAttackRadio);
+        
+        applyCheckboxStyling(enabled, readOnlyClass,
+            fireDefenseCheck, iceDefenseCheck, thunderDefenseCheck, earthDefenseCheck,
+            poisonDefenseCheck, windDefenseCheck, waterDefenseCheck, holyDefenseCheck);
+    }
+    
+    /**
+     * Enable/disable status controls based on editability
+     */
+    private void setStatusControlsEnabled(boolean enabled) {
+        // Status attack checkboxes
         junctionDeathCheck.setDisable(!enabled);
         junctionPoisonCheck.setDisable(!enabled);
         junctionPetrifyCheck.setDisable(!enabled);
@@ -512,7 +635,7 @@ public class JunctionTabController implements Initializable {
         junctionDrainCheck.setDisable(!enabled);
         statusAttackSlider.setDisable(!enabled);
         
-        // Status defense
+        // Status defense checkboxes
         junctionDeathDefenseCheck.setDisable(!enabled);
         junctionPoisonDefenseCheck.setDisable(!enabled);
         junctionPetrifyDefenseCheck.setDisable(!enabled);
@@ -527,9 +650,19 @@ public class JunctionTabController implements Initializable {
         junctionConfusionDefenseCheck.setDisable(!enabled);
         junctionDrainDefenseCheck.setDisable(!enabled);
         statusDefenseSlider.setDisable(!enabled);
+        
+        // Apply styling
+        String readOnlyClass = "readonly-field";
+        applyCheckboxStyling(enabled, readOnlyClass,
+            junctionDeathCheck, junctionPoisonCheck, junctionPetrifyCheck, junctionDarknessCheck,
+            junctionSilenceCheck, junctionBerserkCheck, junctionZombieCheck, junctionSleepCheck,
+            junctionSlowCheck, junctionStopCheck, junctionConfusionCheck, junctionDrainCheck,
+            junctionDeathDefenseCheck, junctionPoisonDefenseCheck, junctionPetrifyDefenseCheck,
+            junctionDarknessDefenseCheck, junctionSilenceDefenseCheck, junctionBerserkDefenseCheck,
+            junctionZombieDefenseCheck, junctionSleepDefenseCheck, junctionSlowDefenseCheck,
+            junctionStopDefenseCheck, junctionCurseDefenseCheck, junctionConfusionDefenseCheck,
+            junctionDrainDefenseCheck);
     }
-    
-
     
     /**
      * Execute a UI command for Integer field changes.
@@ -571,7 +704,6 @@ public class JunctionTabController implements Initializable {
         return currentMagic != null ? currentMagic.index() : -1;
     }
     
-   
     private void showError(String message, String details) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");

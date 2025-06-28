@@ -23,11 +23,17 @@ public class MagicDataToDtoMapper {
             return null;
         }
         
+        // Debug logging for newly created magic
+        if (magic.isNewlyCreated()) {
+            System.out.println("DEBUG: Converting newly created magic to DTO: " + magic.getExtractedSpellName() + " (index: " + magic.getIndex() + ")");
+        }
+        
         return new MagicDisplayDTO(
             magic.getIndex(),
             magic.getMagicID(),
             magic.getExtractedSpellName(),
             magic.getExtractedSpellDescription(),
+            magic.getTranslations(), // Include translations
             magic.getSpellPower(),
             magic.getElement(),
             magic.getAttackType(),
@@ -49,7 +55,8 @@ public class MagicDataToDtoMapper {
             magic.hasStatusEffects(),
             magic.hasJunctionBonuses(),
             magic.isCurative(),
-            false // not modified initially
+            false, // not modified initially
+            magic.isNewlyCreated()
         );
     }
     

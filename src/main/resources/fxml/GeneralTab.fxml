@@ -21,12 +21,12 @@
             <Label text="Element" GridPane.columnIndex="2" GridPane.rowIndex="0" />
             <ComboBox fx:id="elementComboBox" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="150" />
             
-            <!-- Row 1.5 - Spell Name and Description (readonly) -->
+            <!-- Row 1.5 - Spell Name and Description (clickable for translations) -->
             <Label text="Spell Name" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-            <TextField fx:id="spellNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="false" styleClass="readonly-field" />
+            <TextField fx:id="spellNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" editable="false" styleClass="translation-field" onMouseClicked="#onSpellNameClicked" />
             
             <Label text="Spell Description" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-            <TextField fx:id="spellDescriptionField" GridPane.columnIndex="3" GridPane.rowIndex="1" editable="false" styleClass="readonly-field" />
+            <TextField fx:id="spellDescriptionField" GridPane.columnIndex="3" GridPane.rowIndex="1" editable="false" styleClass="translation-field" onMouseClicked="#onSpellDescriptionClicked" />
             
             <!-- Row 2 -->
             <Label text="Attack Type" GridPane.columnIndex="0" GridPane.rowIndex="2" />

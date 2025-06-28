@@ -99,6 +99,36 @@
     -fx-font-weight: bold;
 }
 
+/* Table Row Styling for Newly Created Magic */
+.table-view .table-row-cell.newly-created {
+    -fx-background-color: #2d4a2d !important;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell.newly-created:odd {
+    -fx-background-color: #264426 !important;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell.newly-created:selected {
+    -fx-background-color: #4a7c4a !important;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell.newly-created:selected:odd {
+    -fx-background-color: #3f6b3f !important;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell.newly-created:hover {
+    -fx-background-color: #3a5c3a !important;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell.newly-created .table-cell {
+    -fx-background-color: inherit !important;
+}
+
 .table-view .table-cell {
     -fx-border-color: #555555;
     -fx-border-width: 0 1 1 0;
@@ -146,11 +176,155 @@
     -fx-background-color: #555555;
 }
 
+/* Enhanced read-only field styling for better visual distinction */
 .readonly-field {
-    -fx-background-color: #3a3a3a;
-    -fx-border-color: #555555;
-    -fx-text-fill: #b0b0b0;
-    -fx-opacity: 0.8;
+    -fx-background-color: #f0f0f0 !important;
+    -fx-text-fill: #666666 !important;
+    -fx-opacity: 0.7 !important;
+    -fx-border-color: #cccccc !important;
+}
+
+/* Read-only ComboBox styling */
+.combo-box.readonly-field {
+    -fx-background-color: #f0f0f0 !important;
+}
+
+.combo-box.readonly-field .arrow-button {
+    -fx-background-color: #e0e0e0 !important;
+}
+
+/* Read-only Spinner styling */
+.spinner.readonly-field {
+    -fx-background-color: #f0f0f0 !important;
+}
+
+.spinner.readonly-field .text-field {
+    -fx-background-color: #f0f0f0 !important;
+    -fx-text-fill: #666666 !important;
+}
+
+.spinner.readonly-field .increment-arrow-button,
+.spinner.readonly-field .decrement-arrow-button {
+    -fx-background-color: #e0e0e0 !important;
+}
+
+/* Read-only CheckBox styling */
+.check-box.readonly-field {
+    -fx-text-fill: #666666 !important;
+    -fx-opacity: 0.7 !important;
+}
+
+.check-box.readonly-field .box {
+    -fx-background-color: #f0f0f0 !important;
+    -fx-border-color: #cccccc !important;
+}
+
+/* Read-only RadioButton styling */
+.radio-button.readonly-field {
+    -fx-text-fill: #666666 !important;
+    -fx-opacity: 0.7 !important;
+}
+
+.radio-button.readonly-field .radio {
+    -fx-background-color: #f0f0f0 !important;
+    -fx-border-color: #cccccc !important;
+}
+
+/* Read-only Slider styling */
+.slider.readonly-field {
+    -fx-opacity: 0.6 !important;
+}
+
+.slider.readonly-field .track {
+    -fx-background-color: #e0e0e0 !important;
+}
+
+.slider.readonly-field .thumb {
+    -fx-background-color: #cccccc !important;
+}
+
+/* Read-only Button styling */
+.button.readonly-field {
+    -fx-background-color: #f0f0f0 !important;
+    -fx-text-fill: #999999 !important;
+    -fx-border-color: #cccccc !important;
+    -fx-opacity: 0.7 !important;
+}
+
+/* Disabled state should still look disabled, but read-only is a different visual state */
+.readonly-field:disabled {
+    -fx-background-color: #f5f5f5 !important;
+    -fx-text-fill: #888888 !important;
+    -fx-opacity: 0.5 !important;
+}
+
+/* Hover effects for read-only fields (subtle indication they're not interactive) */
+.readonly-field:hover {
+    -fx-cursor: not-allowed !important;
+}
+
+/* Focus styling for read-only fields (should be minimal) */
+.readonly-field:focused {
+    -fx-border-color: #cccccc !important;
+    -fx-border-width: 1px !important;
+}
+
+/* Special styling for newly created magic items in the list */
+.table-row-cell.newly-created-magic {
+    -fx-background-color: 
+        linear-gradient(to bottom, 
+            rgba(144, 238, 144, 0.3) 0%, 
+            rgba(144, 238, 144, 0.2) 50%, 
+            rgba(144, 238, 144, 0.3) 100%) !important;
+    -fx-border-color: rgba(144, 238, 144, 0.6) !important;
+    -fx-border-width: 1px !important;
+}
+
+.table-row-cell.newly-created-magic:selected {
+    -fx-background-color: 
+        linear-gradient(to bottom, 
+            rgba(144, 238, 144, 0.6) 0%, 
+            rgba(144, 238, 144, 0.5) 50%, 
+            rgba(144, 238, 144, 0.6) 100%) !important;
+    -fx-border-color: rgba(144, 238, 144, 0.8) !important;
+}
+
+.table-row-cell.newly-created-magic:hover {
+    -fx-background-color: 
+        linear-gradient(to bottom, 
+            rgba(144, 238, 144, 0.4) 0%, 
+            rgba(144, 238, 144, 0.3) 50%, 
+            rgba(144, 238, 144, 0.4) 100%) !important;
+}
+
+/* Tooltip styling for explaining read-only vs editable behavior */
+.readonly-tooltip {
+    -fx-background-color: #ffffe0;
+    -fx-text-fill: #666666;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+    -fx-padding: 5px;
+    -fx-font-size: 11px;
+}
+
+/* Translation field styling - clickable and indicates internationalization support */
+.translation-field {
+    -fx-background-color: #f8f8ff !important; /* Light blue background */
+    -fx-border-color: #4169e1 !important; /* Royal blue border */
+    -fx-border-width: 2px !important;
+    -fx-cursor: hand !important; /* Hand cursor to indicate clickability */
+    -fx-text-fill: #333333 !important;
+}
+
+.translation-field:hover {
+    -fx-background-color: #e6e6fa !important; /* Slightly darker on hover */
+    -fx-border-color: #0000cd !important; /* Darker blue border on hover */
+    -fx-effect: dropshadow(gaussian, rgba(65, 105, 225, 0.4), 5, 0, 0, 0) !important;
+}
+
+.translation-field:focused {
+    -fx-border-color: #0000ff !important; /* Bright blue when focused */
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 255, 0.6), 8, 0, 0, 0) !important;
 }
 
 /* Combo Boxes */

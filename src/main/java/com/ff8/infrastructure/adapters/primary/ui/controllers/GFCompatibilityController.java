@@ -174,8 +174,9 @@ public class GFCompatibilityController implements Initializable {
                 tonberrySpinner.getValueFactory().setValue(gfCompatibility.getCompatibility(GF.TONBERRY));
                 edenSpinner.getValueFactory().setValue(gfCompatibility.getCompatibility(GF.EDEN));
                 
-                setControlsEnabled(true);
-                logger.debug("Loaded GF compatibility data for magic: {}", magic.spellName());
+                // Set controls enabled based on whether this is newly created magic
+                setControlsForMagic(magic);
+                logger.debug("Loaded GF compatibility data for magic: {} (newly created: {})", magic.spellName(), magic.isNewlyCreated());
             } else {
                 clearFields();
                 setControlsEnabled(false);
@@ -206,7 +207,60 @@ public class GFCompatibilityController implements Initializable {
     }
     
     private void setControlsEnabled(boolean enabled) {
-        // Enable/disable all GF compatibility spinners
+        if (enabled) {
+            // When enabling, we still need to respect whether magic is newly created
+            if (currentMagic != null) {
+                setControlsForMagic(currentMagic);
+            }
+        } else {
+            // When disabling completely (no magic selected), disable everything
+            setGFControlsEnabled(false);
+        }
+    }
+    
+    /**
+     * Set control states based on whether the magic is newly created or existing.
+     * Newly created magic is fully editable, existing magic is read-only.
+     */
+    private void setControlsForMagic(MagicDisplayDTO magic) {
+        boolean isEditable = magic.isNewlyCreated();
+        
+        // Apply read-only styling and enable/disable controls
+        applyReadOnlyStylesToControls(isEditable);
+        setGFControlsEnabled(isEditable);
+        
+        logger.debug("Set GF compatibility controls for magic - editable: {}", isEditable);
+    }
+    
+    /**
+     * Apply visual styling to indicate read-only state
+     */
+    private void applyReadOnlyStylesToControls(boolean isEditable) {
+        String readOnlyClass = "readonly-field";
+        
+        // Apply styling to all GF compatibility spinners
+        applySpinnerStyling(isEditable, readOnlyClass,
+            quezacotlSpinner, shivaSpinner, ifritSpinner, sirenSpinner, brothersSpinner, diablosSpinner,
+            carbuncleSpinner, leviathanSpinner, pandemonaSpinner, cerberusSpinner, alexanderSpinner,
+            doomtrainSpinner, bahamutSpinner, cactuarSpinner, tonberrySpinner, edenSpinner);
+    }
+    
+    /**
+     * Apply styling to spinners based on enabled state
+     */
+    private void applySpinnerStyling(boolean enabled, String readOnlyClass, Spinner<Double>... spinners) {
+        for (Spinner<Double> spinner : spinners) {
+            spinner.getStyleClass().remove(readOnlyClass);
+            if (!enabled) {
+                spinner.getStyleClass().add(readOnlyClass);
+            }
+        }
+    }
+    
+    /**
+     * Enable/disable all GF compatibility controls based on editability
+     */
+    private void setGFControlsEnabled(boolean enabled) {
         quezacotlSpinner.setDisable(!enabled);
         shivaSpinner.setDisable(!enabled);
         ifritSpinner.setDisable(!enabled);
@@ -224,8 +278,6 @@ public class GFCompatibilityController implements Initializable {
         tonberrySpinner.setDisable(!enabled);
         edenSpinner.setDisable(!enabled);
     }
-    
-
     
     /**
      * Execute a UI command for field changes.

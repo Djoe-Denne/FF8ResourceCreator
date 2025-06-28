@@ -10,6 +10,8 @@
             <Menu text="File">
                <MenuItem fx:id="openMenuItem" onAction="#openFile" text="Open..." accelerator="Ctrl+O" />
                <SeparatorMenuItem />
+               <MenuItem fx:id="newMagicMenuItem" onAction="#createNewMagic" text="New Magic..." accelerator="Ctrl+N" />
+               <SeparatorMenuItem />
                <MenuItem fx:id="saveMenuItem" onAction="#saveFile" text="Save" accelerator="Ctrl+S" />
                <MenuItem fx:id="saveAsMenuItem" onAction="#saveAsFile" text="Save As..." accelerator="Ctrl+Shift+S" />
                <SeparatorMenuItem />

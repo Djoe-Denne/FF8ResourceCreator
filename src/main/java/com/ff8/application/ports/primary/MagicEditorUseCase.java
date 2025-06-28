@@ -1,6 +1,7 @@
 package com.ff8.application.ports.primary;
 
 import com.ff8.application.dto.MagicDisplayDTO;
+import com.ff8.domain.entities.SpellTranslations;
 import com.ff8.domain.exceptions.InvalidMagicDataException;
 
 import java.util.List;
@@ -21,6 +22,11 @@ public interface MagicEditorUseCase {
      * Update magic data from UI input
      */
     void updateMagicData(int magicIndex, MagicDisplayDTO data) throws InvalidMagicDataException;
+    
+    /**
+     * Update magic translations (internationalization)
+     */
+    void updateMagicTranslations(int magicIndex, SpellTranslations translations) throws InvalidMagicDataException;
     
     /**
      * Update magic data with validation and return the updated DTO for UI synchronization.

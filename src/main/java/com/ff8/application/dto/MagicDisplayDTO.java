@@ -1,5 +1,6 @@
 package com.ff8.application.dto;
 
+import com.ff8.domain.entities.SpellTranslations;
 import com.ff8.domain.entities.enums.AttackType;
 import com.ff8.domain.entities.enums.Element;
 import com.ff8.domain.entities.enums.StatusEffect;
@@ -23,6 +24,7 @@ public record MagicDisplayDTO(
         int magicID,
         String spellName,  // This is the extracted spell name from binary
         String spellDescription,  // This is the extracted spell description from binary
+        SpellTranslations translations,  // Internationalization support
         int spellPower,
         Element element,
         AttackType attackType,
@@ -49,7 +51,8 @@ public record MagicDisplayDTO(
         boolean hasStatusEffects,
         boolean hasJunctionBonuses,
         boolean isCurative,
-        boolean isModified
+        boolean isModified,
+        boolean isNewlyCreated
 ) {
     /**
      * Record for target information
