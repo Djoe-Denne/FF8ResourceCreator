@@ -106,4 +106,19 @@ public interface MagicRepository {
      * Get next available kernel index
      */
     int getNextAvailableIndex();
+
+    /**
+     * Remove all magic data that are NOT newly created (i.e., kernel data)
+     */
+    void removeKernelData();
+
+    /**
+     * Find all newly created magic data
+     */
+    List<MagicData> findNewlyCreated();
+
+    /**
+     * Find all kernel (non-newly created) magic data
+     */
+    List<MagicData> findKernelData();
 } 

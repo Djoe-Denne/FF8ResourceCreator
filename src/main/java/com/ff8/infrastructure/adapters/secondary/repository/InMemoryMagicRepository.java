@@ -144,4 +144,33 @@ public class InMemoryMagicRepository implements MagicRepository {
         // In a real implementation, this would check dirty flags
         return false;
     }
+
+    @Override
+    public void removeKernelData() {
+        logger.info("Removing kernel data (isNewlyCreated=false) from repository");
+        int originalSize = magicStore.size();
+        
+        // Remove all entries where isNewlyCreated is false
+        magicStore.entrySet().removeIf(entry -> !entry.getValue().isNewlyCreated());
+        
+        int newSize = magicStore.size();
+        logger.info("Removed {} kernel data entries. Repository size: {} -> {}", 
+                   (originalSize - newSize), originalSize, newSize);
+    }
+
+    @Override
+    public List<MagicData> findNewlyCreated() {
+        return magicStore.values().stream()
+            .filter(MagicData::isNewlyCreated)
+            .sorted(Comparator.comparingInt(MagicData::getIndex))
+            .toList();
+    }
+
+    @Override
+    public List<MagicData> findKernelData() {
+        return magicStore.values().stream()
+            .filter(magic -> !magic.isNewlyCreated())
+            .sorted(Comparator.comparingInt(MagicData::getIndex))
+            .toList();
+    }
 } 

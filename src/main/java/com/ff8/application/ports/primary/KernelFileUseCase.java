@@ -17,6 +17,11 @@ public interface KernelFileUseCase {
     void loadKernelFile(String filePath) throws BinaryParseException, IOException;
 
     /**
+     * Load magic binary file and add to existing data with isNewlyCreated flag
+     */
+    void loadMagicBinary(String filePath) throws BinaryParseException, IOException;
+
+    /**
      * Save modifications back to kernel.bin file
      */
     void saveKernelFile(String filePath) throws BinaryParseException, IOException;

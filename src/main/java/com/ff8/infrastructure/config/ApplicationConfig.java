@@ -1,22 +1,32 @@
 package com.ff8.infrastructure.config;
 
 import com.ff8.application.ports.primary.KernelFileUseCase;
+import com.ff8.application.ports.primary.LocalizedExportUseCase;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.application.ports.primary.RawDataViewUseCase;
 import com.ff8.application.ports.primary.UserPreferencesUseCase;
+import com.ff8.application.ports.secondary.BinaryExportPort;
 import com.ff8.application.ports.secondary.BinaryParserPort;
 import com.ff8.application.ports.secondary.FileSystemPort;
 import com.ff8.application.ports.secondary.MagicRepository;
+import com.ff8.application.ports.secondary.ResourceFileGeneratorPort;
 import com.ff8.application.ports.secondary.UserPreferencesPort;
 import com.ff8.application.mappers.DtoToMagicDataMapper;
 import com.ff8.application.mappers.MagicDataToDtoMapper;
 import com.ff8.application.services.KernelFileService;
+import com.ff8.application.services.LocalizedExportService;
 import com.ff8.application.services.MagicEditorService;
 import com.ff8.application.services.RawDataViewService;
 import com.ff8.application.services.UserPreferencesService;
+import com.ff8.domain.services.ExportValidationService;
+import com.ff8.domain.services.LanguageValidationService;
 import com.ff8.domain.services.MagicValidationService;
 import com.ff8.domain.services.RawDataMappingService;
 import com.ff8.domain.services.StatusEffectService;
+import com.ff8.domain.services.TextEncodingService;
+import com.ff8.domain.services.TextOffsetCalculationService;
+import com.ff8.infrastructure.adapters.secondary.export.BinaryExportAdapter;
+import com.ff8.infrastructure.adapters.secondary.export.ResourceFileGenerator;
 import com.ff8.infrastructure.adapters.secondary.filesystem.LocalFileSystemAdapter;
 import com.ff8.infrastructure.adapters.secondary.parser.KernelBinaryParser;
 import com.ff8.infrastructure.adapters.secondary.preferences.PropertiesUserPreferencesAdapter;
@@ -36,11 +46,17 @@ public class ApplicationConfig {
     private final BinaryParserPort binaryParserAdapter;
     private final MagicRepository magicRepositoryAdapter;
     private final UserPreferencesPort userPreferencesAdapter;
+    private final ResourceFileGeneratorPort resourceFileGeneratorAdapter;
+    private final BinaryExportPort binaryExportAdapter;
     
     // Domain services
     private final StatusEffectService statusEffectService;
     private final MagicValidationService magicValidationService;
     private final RawDataMappingService rawDataMappingService;
+    private final TextEncodingService textEncodingService;
+    private final TextOffsetCalculationService textOffsetCalculationService;
+    private final LanguageValidationService languageValidationService;
+    private final ExportValidationService exportValidationService;
     
     // Application mappers
     private final MagicDataToDtoMapper magicDataToDtoMapper;
@@ -51,6 +67,7 @@ public class ApplicationConfig {
     private final KernelFileUseCase kernelFileService;
     private final UserPreferencesUseCase userPreferencesService;
     private final RawDataViewUseCase rawDataViewService;
+    private final LocalizedExportUseCase localizedExportService;
     
     private ApplicationConfig() {
         // Initialize infrastructure adapters (Secondary adapters)
@@ -59,7 +76,17 @@ public class ApplicationConfig {
         this.magicRepositoryAdapter = new InMemoryMagicRepository();
         this.userPreferencesAdapter = new PropertiesUserPreferencesAdapter();
         
-        // Initialize domain services
+        // Initialize domain services first (needed by infrastructure adapters)
+        this.textEncodingService = new TextEncodingService();
+        this.textOffsetCalculationService = new TextOffsetCalculationService(textEncodingService);
+        this.languageValidationService = new LanguageValidationService(textEncodingService);
+        this.exportValidationService = new ExportValidationService(textEncodingService, languageValidationService);
+        
+        // Initialize export adapters (depend on domain services)
+        this.resourceFileGeneratorAdapter = new ResourceFileGenerator(textEncodingService);
+        this.binaryExportAdapter = new BinaryExportAdapter(binaryParserAdapter);
+        
+        // Initialize remaining domain services
         this.statusEffectService = new StatusEffectService();
         this.magicValidationService = new MagicValidationService();
         this.rawDataMappingService = new RawDataMappingService();
@@ -81,7 +108,8 @@ public class ApplicationConfig {
             binaryParserAdapter,
             fileSystemAdapter,
             magicRepositoryAdapter,
-            magicDataToDtoMapper
+            magicDataToDtoMapper,
+            textEncodingService
         );
         
         this.userPreferencesService = new UserPreferencesService(
@@ -91,6 +119,16 @@ public class ApplicationConfig {
         this.rawDataViewService = new RawDataViewService(
             magicRepositoryAdapter,
             rawDataMappingService
+        );
+        
+        this.localizedExportService = new LocalizedExportService(
+            magicRepositoryAdapter,
+            textEncodingService,
+            textOffsetCalculationService,
+            languageValidationService,
+            exportValidationService,
+            resourceFileGeneratorAdapter,
+            binaryExportAdapter
         );
     }
     
@@ -132,6 +170,10 @@ public class ApplicationConfig {
     
     public RawDataViewUseCase getRawDataViewUseCase() {
         return rawDataViewService;
+    }
+    
+    public LocalizedExportUseCase getLocalizedExportUseCase() {
+        return localizedExportService;
     }
     
     // Getters for secondary ports (for testing or direct access)

@@ -334,8 +334,8 @@ public class KernelBinaryParser implements BinaryParserPort {
         int attackStatusWord = buffer.getShort() & 0xFFFF;
         int defenseStatusWord = buffer.getShort() & 0xFFFF;
         
-        StatusEffectSet attackStatuses = parseJunctionStatusAttack(attackStatusWord);
-        StatusEffectSet defenseStatuses = parseJunctionStatusDefense(defenseStatusWord);
+        StatusEffectSet attackStatuses = parseJunctionStatus(attackStatusWord);
+        StatusEffectSet defenseStatuses = parseJunctionStatus(defenseStatusWord);
         
         return new JunctionStatusEffects(attackStatuses, attackValue, defenseStatuses, defenseValue);
     }
@@ -435,10 +435,11 @@ public class KernelBinaryParser implements BinaryParserPort {
     // Helper methods for complex field parsing
     private List<Element> parseElementalDefense(int defenseElementByte) {
         List<Element> elements = new ArrayList<>();
+        int[] elementBitMap = {1, 2, 4, 8, 16, 32, 64, 128};
         for (int i = 0; i < 8; i++) {
-            if ((defenseElementByte & (1 << i)) != 0) {
+            if ((defenseElementByte & elementBitMap[i]) != 0) {
                 try {
-                    elements.add(Element.fromValue(i));
+                    elements.add(Element.fromValue(elementBitMap[i]));
                 } catch (IllegalArgumentException e) {
                     // Skip unknown elements
                 }
@@ -447,24 +448,11 @@ public class KernelBinaryParser implements BinaryParserPort {
         return elements;
     }
     
-    private StatusEffectSet parseJunctionStatusAttack(int attackStatusWord) {
+    private StatusEffectSet parseJunctionStatus(int statusWord) {
         StatusEffectSet statusSet = new StatusEffectSet();
-        // Map specific bits to status effects for junction attack
-        int[] statusBitMap = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12}; // Skip bit 10
+        int[] statusBitMap = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768};
         for (int i = 0; i < statusBitMap.length && i < 16; i++) {
-            if ((attackStatusWord & (1 << i)) != 0) {
-                statusSet.setBit(statusBitMap[i], true);
-            }
-        }
-        return statusSet;
-    }
-    
-    private StatusEffectSet parseJunctionStatusDefense(int defenseStatusWord) {
-        StatusEffectSet statusSet = new StatusEffectSet();
-        // Map specific bits to status effects for junction defense
-        int[] statusBitMap = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-        for (int i = 0; i < statusBitMap.length && i < 16; i++) {
-            if ((defenseStatusWord & (1 << i)) != 0) {
+            if ((statusWord & statusBitMap[i]) != 0) {
                 statusSet.setBit(statusBitMap[i], true);
             }
         }

@@ -8,15 +8,18 @@ import com.ff8.application.ports.secondary.BinaryParserPort;
 import com.ff8.application.ports.secondary.FileSystemPort;
 import com.ff8.application.ports.secondary.MagicRepository;
 import com.ff8.domain.entities.MagicData;
+import com.ff8.domain.entities.SpellTranslations;
 import com.ff8.domain.events.KernelReadEvent;
 import com.ff8.domain.exceptions.BinaryParseException;
 import com.ff8.domain.observers.AbstractSubject;
+import com.ff8.domain.services.TextEncodingService;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.logging.Logger;
 
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     private final FileSystemPort fileSystem;
     private final MagicRepository magicRepository;
     private final MagicDataToDtoMapper magicDataToDtoMapper;
+    private final TextEncodingService textEncodingService;
     private boolean fileLoaded = false;
     private String currentFilePath;
 
@@ -46,14 +50,15 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
                 throw new BinaryParseException("Invalid kernel.bin file: insufficient size");
             }
             
-            // Parse all magic data
-            magicRepository.clear();
+            // Remove existing kernel data (keep newly created magic)
+            magicRepository.removeKernelData();
             
+            // Parse all magic data from kernel
             for (int i = 0; i < MAGIC_COUNT; i++) {
                 int offset = MAGIC_SECTION_OFFSET + (i * MAGIC_STRUCT_SIZE);
                 MagicData magic = binaryParser.parseMagicData(kernelData, offset);
-                // Set the index manually since the old interface doesn't support it
-                magic = magic.toBuilder().index(i).build();
+                // Set the index manually and ensure isNewlyCreated is false (default)
+                magic = magic.toBuilder().index(i).isNewlyCreated(false).build();
                 magicRepository.save(magic);
                 
                 logger.fine("Parsed magic ID: " + i + " - " + magic.getExtractedSpellName());
@@ -81,6 +86,184 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         } catch (Exception e) {
             throw new BinaryParseException("Failed to parse kernel file: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public void loadMagicBinary(String filePath) throws BinaryParseException, IOException {
+        try {
+            logger.info("Loading magic binary file: " + filePath);
+            
+            // Read the binary file
+            byte[] magicBinaryData = fileSystem.readBinaryFile(filePath);
+            
+            // Validate file size - should be multiple of magic struct size
+            if (magicBinaryData.length % MAGIC_STRUCT_SIZE != 0) {
+                throw new BinaryParseException("Invalid magic binary file: size must be multiple of " + MAGIC_STRUCT_SIZE + " bytes");
+            }
+            
+            int magicCount = magicBinaryData.length / MAGIC_STRUCT_SIZE;
+            logger.info("Magic binary contains " + magicCount + " magic entries");
+            
+            // Load language files - English is mandatory
+            Path binaryFilePath = Paths.get(filePath);
+            String baseName = getBaseNameFromPath(binaryFilePath);
+            Path parentDir = binaryFilePath.getParent();
+            
+            Map<String, SpellTranslations.Translation[]> languageTranslations = loadLanguageFiles(parentDir, baseName, magicCount);
+            
+            // Parse all magic data and flag as newly created
+            int addedCount = 0;
+            for (int i = 0; i < magicCount; i++) {
+                int offset = i * MAGIC_STRUCT_SIZE;
+                MagicData magic = binaryParser.parseMagicData(magicBinaryData, offset);
+                
+                // Get next available index for this magic
+                int nextIndex = magicRepository.getNextAvailableIndex();
+                
+                // Build translations for this magic entry
+                SpellTranslations translations = buildSpellTranslations(languageTranslations, i);
+                
+                // Set as newly created and assign proper index with translations
+                magic = magic.toBuilder()
+                    .index(nextIndex)
+                    .isNewlyCreated(true)
+                    .translations(translations)
+                    .build();
+                    
+                magicRepository.save(magic);
+                addedCount++;
+                
+                logger.fine("Added magic from binary: index=" + nextIndex + ", ID=" + magic.getMagicID() + 
+                           ", name='" + magic.getSpellName() + "'");
+            }
+            
+            logger.info("Successfully added " + addedCount + " magic spells from binary file with translations");
+            
+            // Get file size for the event
+            long fileSize = magicBinaryData.length;
+            
+            // Convert MagicData to MagicDisplayDTO for the event using the mapper
+            List<MagicDisplayDTO> magicDisplayList = magicDataToDtoMapper.toDtoList(magicRepository.findAll());
+            
+            // Notify observers about the successful binary read
+            KernelReadEvent kernelReadEvent = new KernelReadEvent(filePath, magicDisplayList, fileSize);
+            notifyObservers(kernelReadEvent);
+            
+            logger.info("Notified " + getObserverCount() + " observers about magic binary load");
+            
+        } catch (IOException e) {
+            throw new BinaryParseException("Failed to read magic binary file: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new BinaryParseException("Failed to parse magic binary file: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extract base name from file path (remove extension)
+     */
+    private String getBaseNameFromPath(Path filePath) {
+        String fileName = filePath.getFileName().toString();
+        int lastDotIndex = fileName.lastIndexOf('.');
+        return lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
+    }
+
+    /**
+     * Load language files associated with the magic binary
+     * English file is mandatory - throws exception if not found
+     */
+    private Map<String, SpellTranslations.Translation[]> loadLanguageFiles(Path parentDir, String baseName, int magicCount) 
+            throws BinaryParseException, IOException {
+        
+        Map<String, SpellTranslations.Translation[]> languageTranslations = new LinkedHashMap<>();
+        
+        // Check for English file (mandatory)
+        Path englishFile = parentDir.resolve(baseName + "_en.resources.bin");
+        if (!Files.exists(englishFile)) {
+            // Also try alternative naming convention
+            englishFile = parentDir.resolve(baseName + "_english.resources.bin");
+            if (!Files.exists(englishFile)) {
+                throw new BinaryParseException("English language file is mandatory but not found. Expected: " + 
+                    parentDir.resolve(baseName + "_en.resources.bin"));
+            }
+        }
+        
+        // Load English translations
+        logger.info("Loading English translations from: " + englishFile);
+        byte[] englishData = fileSystem.readBinaryFile(englishFile.toString());
+        
+        // For now, assume fixed lengths - in real implementation, these would be calculated
+        int maxNameLength = 32;  // Approximate max name length
+        int maxDescLength = 128; // Approximate max description length
+        
+        Map<Integer, SpellTranslations.Translation> englishTranslations = 
+            textEncodingService.parseLanguageResourceFile(englishData, magicCount, maxNameLength, maxDescLength);
+        
+        SpellTranslations.Translation[] englishArray = new SpellTranslations.Translation[magicCount];
+        for (int i = 0; i < magicCount; i++) {
+            englishArray[i] = englishTranslations.getOrDefault(i, new SpellTranslations.Translation("", ""));
+        }
+        languageTranslations.put("English", englishArray);
+        
+        // Look for other language files (optional)
+        String[] otherLanguages = {"fr", "french", "de", "german", "es", "spanish", "it", "italian", "jp", "japanese"};
+        for (String langCode : otherLanguages) {
+            Path langFile = parentDir.resolve(baseName + "_" + langCode + ".resources.bin");
+            if (Files.exists(langFile)) {
+                logger.info("Loading additional language file: " + langFile);
+                try {
+                    byte[] langData = fileSystem.readBinaryFile(langFile.toString());
+                    Map<Integer, SpellTranslations.Translation> langTranslations = 
+                        textEncodingService.parseLanguageResourceFile(langData, magicCount, maxNameLength, maxDescLength);
+                    
+                    SpellTranslations.Translation[] langArray = new SpellTranslations.Translation[magicCount];
+                    for (int i = 0; i < magicCount; i++) {
+                        langArray[i] = langTranslations.getOrDefault(i, new SpellTranslations.Translation("", ""));
+                    }
+                    
+                    String languageName = getLanguageDisplayName(langCode);
+                    languageTranslations.put(languageName, langArray);
+                } catch (Exception e) {
+                    logger.warning("Failed to load language file " + langFile + ": " + e.getMessage());
+                    // Continue without this language file
+                }
+            }
+        }
+        
+        logger.info("Loaded translations for " + languageTranslations.size() + " languages");
+        return languageTranslations;
+    }
+
+    /**
+     * Build SpellTranslations object for a specific magic entry
+     */
+    private SpellTranslations buildSpellTranslations(Map<String, SpellTranslations.Translation[]> languageTranslations, int magicIndex) {
+        Map<String, SpellTranslations.Translation> translations = new LinkedHashMap<>();
+        
+        // Add translations from all loaded languages
+        for (Map.Entry<String, SpellTranslations.Translation[]> entry : languageTranslations.entrySet()) {
+            String language = entry.getKey();
+            SpellTranslations.Translation[] langArray = entry.getValue();
+            
+            if (magicIndex < langArray.length) {
+                translations.put(language, langArray[magicIndex]);
+            }
+        }
+        
+        return new SpellTranslations(translations);
+    }
+
+    /**
+     * Get display name for language code
+     */
+    private String getLanguageDisplayName(String langCode) {
+        return switch (langCode.toLowerCase()) {
+            case "fr", "french" -> "French";
+            case "de", "german" -> "German";
+            case "es", "spanish" -> "Spanish";
+            case "it", "italian" -> "Italian";
+            case "jp", "japanese" -> "Japanese";
+            default -> langCode.substring(0, 1).toUpperCase() + langCode.substring(1).toLowerCase();
+        };
     }
 
     @Override

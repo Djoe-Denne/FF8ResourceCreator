@@ -1,6 +1,9 @@
 package com.ff8.infrastructure.adapters.primary.ui.controllers;
 
+import com.ff8.application.dto.ExportRequestDTO;
+import com.ff8.application.dto.ExportResultDTO;
 import com.ff8.application.ports.primary.KernelFileUseCase;
+import com.ff8.application.ports.primary.LocalizedExportUseCase;
 import com.ff8.application.ports.primary.MagicEditorUseCase;
 import com.ff8.application.ports.primary.UserPreferencesUseCase;
 import com.ff8.infrastructure.config.ApplicationConfig;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 /**
@@ -26,10 +30,12 @@ public class MainController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     
     @FXML private MenuBar menuBar;
-    @FXML private MenuItem openMenuItem;
+    @FXML private MenuItem openKernelMenuItem;
+    @FXML private MenuItem openMagicBinaryMenuItem;
     @FXML private MenuItem newMagicMenuItem;
     @FXML private MenuItem saveMenuItem;
     @FXML private MenuItem saveAsMenuItem;
+    @FXML private MenuItem exportMenuItem;
     @FXML private MenuItem exitMenuItem;
     @FXML private MenuItem aboutMenuItem;
     
@@ -50,6 +56,7 @@ public class MainController implements Initializable {
     private final KernelFileUseCase kernelFileUseCase;
     private final MagicEditorUseCase magicEditorUseCase;
     private final UserPreferencesUseCase userPreferencesUseCase;
+    private final LocalizedExportUseCase localizedExportUseCase;
     
     // UI Models
     private final MagicListModel magicListModel;
@@ -62,6 +69,7 @@ public class MainController implements Initializable {
         this.kernelFileUseCase = config.getKernelFileUseCase();
         this.magicEditorUseCase = config.getMagicEditorUseCase();
         this.userPreferencesUseCase = config.getUserPreferencesUseCase();
+        this.localizedExportUseCase = config.getLocalizedExportUseCase();
         this.magicListModel = new MagicListModel();
         
         // Register MagicListModel as observer of KernelFileService for automatic updates
@@ -135,26 +143,29 @@ public class MainController implements Initializable {
     }
     
     private void setupMenuActions() {
-        openMenuItem.setOnAction(e -> openFile());
+        openKernelMenuItem.setOnAction(e -> openKernelFile());
+        openMagicBinaryMenuItem.setOnAction(e -> openMagicBinary());
         newMagicMenuItem.setOnAction(e -> createNewMagic());
         saveMenuItem.setOnAction(e -> saveFile());
         saveAsMenuItem.setOnAction(e -> saveAsFile());
+        exportMenuItem.setOnAction(e -> exportNewlyCreatedMagic());
         exitMenuItem.setOnAction(e -> exitApplication());
         aboutMenuItem.setOnAction(e -> showAbout());
         
-        // Initially disable save and new magic options
+        // Initially disable save, new magic, and export options
         newMagicMenuItem.setDisable(true);
         saveMenuItem.setDisable(true);
         saveAsMenuItem.setDisable(true);
+        exportMenuItem.setDisable(true);
     }
     
     private void setupStatusBar() {
         progressBar.setVisible(false);
-        statusLabel.setText("Ready - Please open a kernel.bin file");
+        statusLabel.setText("Ready - Please open a kernel.bin file or load magic binary");
     }
     
     @FXML
-    private void openFile() {
+    private void openKernelFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Kernel.bin File");
         fileChooser.getExtensionFilters().add(
@@ -176,6 +187,32 @@ public class MainController implements Initializable {
             // Update last opened directory preference
             userPreferencesUseCase.updateLastOpenDirectory(file.getParentFile().toPath());
             loadKernelFile(file);
+        }
+    }
+    
+    @FXML
+    private void openMagicBinary() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Magic Binary File");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Binary Files", "*.bin", "*.dat", "*.*")
+        );
+        
+        // Set initial directory from user preferences
+        var preferences = userPreferencesUseCase.getCurrentPreferences();
+        if (preferences.getLastOpenDirectory() != null && 
+            java.nio.file.Files.exists(preferences.getLastOpenDirectory()) &&
+            java.nio.file.Files.isDirectory(preferences.getLastOpenDirectory())) {
+            
+            fileChooser.setInitialDirectory(preferences.getLastOpenDirectory().toFile());
+            logger.debug("Set initial directory to: {}", preferences.getLastOpenDirectory());
+        }
+        
+        File file = fileChooser.showOpenDialog(getStage());
+        if (file != null) {
+            // Update last opened directory preference
+            userPreferencesUseCase.updateLastOpenDirectory(file.getParentFile().toPath());
+            loadMagicBinary(file);
         }
     }
     
@@ -285,6 +322,112 @@ public class MainController implements Initializable {
     }
     
     @FXML
+    private void exportNewlyCreatedMagic() {
+        logger.debug("Starting export of newly created magic");
+        
+        // Create file chooser for export location
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Newly Created Magic");
+        fileChooser.setInitialFileName("new_magic");
+        
+        // Set extension filters
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("All Files", "*.*"),
+            new FileChooser.ExtensionFilter("Binary Files", "*.bin")
+        );
+        
+        // Set initial directory from user preferences
+        var preferences = userPreferencesUseCase.getCurrentPreferences();
+        if (preferences.getLastOpenDirectory() != null && 
+            java.nio.file.Files.exists(preferences.getLastOpenDirectory()) &&
+            java.nio.file.Files.isDirectory(preferences.getLastOpenDirectory())) {
+            
+            fileChooser.setInitialDirectory(preferences.getLastOpenDirectory().toFile());
+        }
+        
+        // Show save dialog
+        File selectedFile = fileChooser.showSaveDialog(getStage());
+        if (selectedFile != null) {
+            // Update last opened directory preference
+            userPreferencesUseCase.updateLastOpenDirectory(selectedFile.getParentFile().toPath());
+            
+            // Perform export in background task
+            performExport(selectedFile);
+        }
+    }
+    
+    /**
+     * Perform the actual export
+     */
+    private void performExport(File targetFile) {
+        try {
+            // Unbind status label to avoid binding conflicts
+            statusLabel.textProperty().unbind();
+            statusLabel.setText("Exporting newly created magic...");
+            
+            // Get file name without extension for base filename
+            String baseFilename = targetFile.getName();
+            int dotIndex = baseFilename.lastIndexOf('.');
+            if (dotIndex > 0) {
+                baseFilename = baseFilename.substring(0, dotIndex);
+            }
+            
+            // Create export request
+            ExportRequestDTO request = ExportRequestDTO.simple(baseFilename, targetFile.getParentFile().toPath());
+            
+            // Perform export
+            ExportResultDTO result = localizedExportUseCase.exportNewlyCreatedMagic(request);
+            
+            if (result.success()) {
+                statusLabel.setText("Export completed successfully - " + result.createdFiles().size() + " files created");
+                
+                // Show success dialog with details
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Export Successful");
+                alert.setHeaderText("Newly created magic exported successfully");
+                
+                StringBuilder content = new StringBuilder();
+                content.append("Files created:\n");
+                for (Path file : result.createdFiles()) {
+                    content.append("• ").append(file.getFileName()).append("\n");
+                }
+                if (result.summary() != null) {
+                    content.append("\nTotal size: ").append(formatFileSize(result.summary().totalFileSize()));
+                }
+                
+                alert.setContentText(content.toString());
+                alert.showAndWait();
+                
+                logger.info("Export completed successfully: {} files created", result.createdFiles().size());
+            } else {
+                statusLabel.setText("Export failed");
+                String errorMsg = result.errors().isEmpty() ? "Unknown error" : String.join(", ", result.errors());
+                showError("Export failed: " + errorMsg, new RuntimeException(errorMsg));
+            }
+            
+        } catch (Exception e) {
+            // Ensure status label is unbound before setting text
+            statusLabel.textProperty().unbind();
+            statusLabel.setText("Export failed");
+            showError("Failed to export newly created magic", e);
+            logger.error("Export failed to: {}", targetFile.getAbsolutePath(), e);
+        }
+    }
+    
+    /**
+     * Format file size for display
+     */
+    private String formatFileSize(long sizeInBytes) {
+        if (sizeInBytes < 1024) {
+            return sizeInBytes + " bytes";
+        } else if (sizeInBytes < 1024 * 1024) {
+            return String.format("%.1f KB", sizeInBytes / 1024.0);
+        } else {
+            return String.format("%.1f MB", sizeInBytes / (1024.0 * 1024.0));
+        }
+    }
+    
+    @FXML
     private void exitApplication() {
         if (hasUnsavedChanges) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -376,6 +519,48 @@ public class MainController implements Initializable {
         loadThread.start();
     }
     
+    private void loadMagicBinary(File file) {
+        Task<Void> loadTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                updateMessage("Loading magic binary file...");
+                updateProgress(0, 1);
+                
+                // Load the magic binary file - MagicListModel will be updated automatically via observer pattern
+                kernelFileUseCase.loadMagicBinary(file.getAbsolutePath());
+                updateProgress(1, 1);
+                
+                // Update UI on JavaFX thread
+                javafx.application.Platform.runLater(() -> {
+                    // Note: Don't change currentFile for magic binary - we want to keep the kernel file as current
+                    hasUnsavedChanges = true; // Mark as changed since we added new magic
+                    updateUIState();
+                    updateMessage("Added magic from binary file: " + file.getName() + " (magic list updated automatically)");
+                });
+                
+                return null;
+            }
+            
+            @Override
+            protected void failed() {
+                javafx.application.Platform.runLater(() -> {
+                    showError("Failed to load magic binary file", getException());
+                    updateMessage("Failed to load magic binary file");
+                });
+            }
+        };
+        
+        // Bind progress and status
+        progressBar.progressProperty().bind(loadTask.progressProperty());
+        statusLabel.textProperty().bind(loadTask.messageProperty());
+        progressBar.visibleProperty().bind(loadTask.runningProperty());
+        
+        // Run the task
+        Thread loadThread = new Thread(loadTask);
+        loadThread.setDaemon(true);
+        loadThread.start();
+    }
+    
     private void saveKernelFile(File file) {
         Task<Void> saveTask = new Task<>() {
             @Override
@@ -428,6 +613,12 @@ public class MainController implements Initializable {
         }
         if (saveAsMenuItem != null) {
             saveAsMenuItem.setDisable(!hasFile);
+        }
+        if (exportMenuItem != null) {
+            // Export is enabled if we have a file loaded and there are newly created magic spells
+            boolean hasNewlyCreatedMagic = hasFile && localizedExportUseCase != null && 
+                localizedExportUseCase.hasNewlyCreatedMagic();
+            exportMenuItem.setDisable(!hasNewlyCreatedMagic);
         }
         
         // Update window title - only if scene is available

@@ -1,12 +1,14 @@
 package com.ff8.infrastructure.adapters.primary.ui.dialogs;
 
 import com.ff8.domain.entities.SpellTranslations;
+import com.ff8.domain.entities.enums.Language;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -47,7 +49,7 @@ public class TranslationEditorDialog {
             this.language = new SimpleStringProperty(language);
             this.name = new SimpleStringProperty(name);
             this.description = new SimpleStringProperty(description);
-            this.isEnglish = "English".equals(language);
+            this.isEnglish = Language.ENGLISH.getDisplayName().equals(language);
         }
         
         public String getLanguage() { return language.get(); }
@@ -109,7 +111,7 @@ public class TranslationEditorDialog {
         HBox buttonPanel = createButtonPanel();
         
         // Create info label
-        Label infoLabel = new Label("English translation is required and cannot be removed.");
+        Label infoLabel = new Label("English translation is required and cannot be removed. Only supported languages can be selected.");
         infoLabel.setStyle("-fx-font-style: italic; -fx-text-fill: #666666;");
         
         VBox centerPanel = new VBox(10);
@@ -137,33 +139,44 @@ public class TranslationEditorDialog {
         // Language column
         TableColumn<TranslationRow, String> languageColumn = new TableColumn<>("Language");
         languageColumn.setCellValueFactory(cellData -> cellData.getValue().languageProperty());
-        languageColumn.setCellFactory(column -> new TextFieldTableCell<TranslationRow, String>() {
-            @Override
-            public void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (!empty && getTableRow() != null) {
-                    TranslationRow row = getTableRow().getItem();
+        
+        // Create list of available languages from enum
+        ObservableList<String> availableLanguages = FXCollections.observableArrayList();
+        for (Language lang : Language.values()) {
+            availableLanguages.add(lang.getDisplayName());
+        }
+        
+        languageColumn.setCellFactory(column -> {
+            ComboBoxTableCell<TranslationRow, String> cell = new ComboBoxTableCell<>(availableLanguages);
+            
+            // Override updateItem to disable editing for English
+            cell.itemProperty().addListener((obs, oldItem, newItem) -> {
+                if (cell.getTableRow() != null) {
+                    TranslationRow row = cell.getTableRow().getItem();
                     if (row != null && row.isEnglish()) {
-                        setEditable(false);
-                        setStyle("-fx-background-color: #f0f0f0; -fx-text-fill: #666666;");
+                        cell.setEditable(false);
+                        cell.setStyle("-fx-background-color: #f0f0f0; -fx-text-fill: #666666;");
                     } else {
-                        setEditable(true);
-                        setStyle("");
+                        cell.setEditable(true);
+                        cell.setStyle("");
                     }
                 }
-            }
+            });
+            
+            return cell;
         });
+        
         languageColumn.setOnEditCommit(event -> {
             TranslationRow row = event.getRowValue();
             if (!row.isEnglish()) {
                 String newValue = event.getNewValue();
-                if (newValue != null && !newValue.trim().isEmpty() && !languageExists(newValue.trim(), row)) {
-                    row.setLanguage(newValue.trim());
+                if (newValue != null && !languageExists(newValue, row)) {
+                    row.setLanguage(newValue);
                 } else {
                     // Revert to old value if invalid
                     translationTable.refresh();
-                    if (newValue != null && languageExists(newValue.trim(), row)) {
-                        showError("Language Already Exists", "A translation for '" + newValue.trim() + "' already exists.");
+                    if (newValue != null && languageExists(newValue, row)) {
+                        showError("Language Already Exists", "A translation for '" + newValue + "' already exists.");
                     }
                 }
             }
@@ -247,20 +260,30 @@ public class TranslationEditorDialog {
     }
     
     private void addNewLanguage() {
-        TextInputDialog inputDialog = new TextInputDialog();
-        inputDialog.setTitle("Add Language");
-        inputDialog.setHeaderText("Enter Language Name");
-        inputDialog.setContentText("Language:");
-        
-        Optional<String> result = inputDialog.showAndWait();
-        result.ifPresent(language -> {
-            String trimmedLanguage = language.trim();
-            if (!trimmedLanguage.isEmpty() && !languageExists(trimmedLanguage, null)) {
-                translationData.add(new TranslationRow(trimmedLanguage, "", ""));
-                logger.debug("Added new language: {}", trimmedLanguage);
-            } else if (languageExists(trimmedLanguage, null)) {
-                showError("Language Already Exists", "A translation for '" + trimmedLanguage + "' already exists.");
+        // Get available languages that aren't already used
+        ObservableList<String> availableLanguages = FXCollections.observableArrayList();
+        for (Language lang : Language.values()) {
+            String langName = lang.getDisplayName();
+            if (!languageExists(langName, null)) {
+                availableLanguages.add(langName);
             }
+        }
+        
+        if (availableLanguages.isEmpty()) {
+            showError("No Languages Available", "All supported languages are already in use.");
+            return;
+        }
+        
+        // Create choice dialog with available languages
+        ChoiceDialog<String> choiceDialog = new ChoiceDialog<>(availableLanguages.get(0), availableLanguages);
+        choiceDialog.setTitle("Add Language");
+        choiceDialog.setHeaderText("Select Language to Add");
+        choiceDialog.setContentText("Language:");
+        
+        Optional<String> result = choiceDialog.showAndWait();
+        result.ifPresent(language -> {
+            translationData.add(new TranslationRow(language, "", ""));
+            logger.debug("Added new language: {}", language);
         });
     }
     
@@ -294,8 +317,9 @@ public class TranslationEditorDialog {
             }
             
             // Ensure English exists
-            if (!translationMap.containsKey("English")) {
-                translationMap.put("English", new SpellTranslations.Translation("", ""));
+            String englishName = Language.ENGLISH.getDisplayName();
+            if (!translationMap.containsKey(englishName)) {
+                translationMap.put(englishName, new SpellTranslations.Translation("", ""));
             }
             
             result = new SpellTranslations(translationMap);
