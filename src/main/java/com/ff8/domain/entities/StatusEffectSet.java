@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
  */
 @EqualsAndHashCode(callSuper = true)
 public final class StatusEffectSet extends AbstractBitFlags implements BinarySerializable {
-    private static final Long TOTAL_BITS = 274877906944L;
+    private static final int TOTAL_BITS = 48;
 
     public StatusEffectSet() {
         super(TOTAL_BITS);
@@ -88,7 +88,7 @@ public final class StatusEffectSet extends AbstractBitFlags implements BinarySer
     public List<StatusEffect> getActiveStatuses() {
         return IntStream.range(0, TOTAL_BITS)
                 .filter(flagBits::get)
-                .mapToObj(StatusEffect::fromBit)
+                .mapToObj(StatusEffect::fromBitIndex)
                 .toList();
     }
 
