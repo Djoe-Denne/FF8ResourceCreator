@@ -417,8 +417,8 @@ public class KernelBinaryParser implements BinaryParserPort {
     private void serializeJunctionStatus(ByteBuffer buffer, JunctionStatusEffects junctionStatus) {
         buffer.put((byte) junctionStatus.getAttackValue());
         buffer.put((byte) junctionStatus.getDefenseValue());
-        buffer.putShort((short) serializeJunctionStatusAttack(junctionStatus.getAttackStatuses()));
-        buffer.putShort((short) serializeJunctionStatusDefense(junctionStatus.getDefenseStatuses()));
+        buffer.putShort((short) serializeJunctionStatus(junctionStatus.getAttackStatuses()));
+        buffer.putShort((short) serializeJunctionStatus(junctionStatus.getDefenseStatuses()));
     }
     
     private void serializeGFCompatibility(ByteBuffer buffer, GFCompatibilitySet compatibility) {
@@ -433,7 +433,7 @@ public class KernelBinaryParser implements BinaryParserPort {
     }
     
     // Helper methods for complex field parsing
-    private List<Element> parseElementalDefense(int defenseElementByte) {
+        private List<Element> parseElementalDefense(int defenseElementByte) {
         List<Element> elements = new ArrayList<>();
         int[] elementBitMap = {1, 2, 4, 8, 16, 32, 64, 128};
         for (int i = 0; i < 8; i++) {
@@ -447,44 +447,76 @@ public class KernelBinaryParser implements BinaryParserPort {
         }
         return elements;
     }
-    
+
     private StatusEffectSet parseJunctionStatus(int statusWord) {
         StatusEffectSet statusSet = new StatusEffectSet();
-        int[] statusBitMap = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768};
-        for (int i = 0; i < statusBitMap.length && i < 16; i++) {
-            if ((statusWord & statusBitMap[i]) != 0) {
-                statusSet.setBit(statusBitMap[i], true);
+        
+        // FF8 Junction Status Mapping (from junction bits to main status bits)
+        // Junction bits 0-6: death(32), poison(33), petrify(34), darkness(35), silence(36), berserk(37), zombie(38)
+        // Junction bits 7-12: sleep(0), slow(2), stop(3), curse(9), confusion(14), drain(15)
+        int[] junctionToMainStatusMap = {
+            32, // bit 0 -> death
+            33, // bit 1 -> poison  
+            34, // bit 2 -> petrify
+            35, // bit 3 -> darkness
+            36, // bit 4 -> silence
+            37, // bit 5 -> berserk
+            38, // bit 6 -> zombie
+            0,  // bit 7 -> sleep
+            2,  // bit 8 -> slow
+            3,  // bit 9 -> stop
+            9,  // bit 10 -> curse
+            14, // bit 11 -> confusion
+            15  // bit 12 -> drain
+            // bits 13-15 are unused
+        };
+        
+        for (int junctionBit = 0; junctionBit < junctionToMainStatusMap.length; junctionBit++) {
+            if ((statusWord & (1 << junctionBit)) != 0) {
+                int mainStatusBit = junctionToMainStatusMap[junctionBit];
+                statusSet.setBit(mainStatusBit, true);
             }
         }
         return statusSet;
+    }
+
+    private int serializeJunctionStatus(StatusEffectSet statusSet) {
+        int result = 0;
+        
+        // Reverse mapping: main status bits to junction bits
+        int[] mainToJunctionStatusMap = new int[39]; // 0-38
+        for (int i = 0; i < mainToJunctionStatusMap.length; i++) {
+            mainToJunctionStatusMap[i] = -1; // default to unavailable
+        }
+        
+        // Set up the reverse mapping
+        mainToJunctionStatusMap[0] = 7;   // sleep -> junction bit 7
+        mainToJunctionStatusMap[2] = 8;   // slow -> junction bit 8
+        mainToJunctionStatusMap[3] = 9;   // stop -> junction bit 9
+        mainToJunctionStatusMap[9] = 10;  // curse -> junction bit 10
+        mainToJunctionStatusMap[14] = 11; // confusion -> junction bit 11
+        mainToJunctionStatusMap[15] = 12; // drain -> junction bit 12
+        mainToJunctionStatusMap[32] = 0;  // death -> junction bit 0
+        mainToJunctionStatusMap[33] = 1;  // poison -> junction bit 1
+        mainToJunctionStatusMap[34] = 2;  // petrify -> junction bit 2
+        mainToJunctionStatusMap[35] = 3;  // darkness -> junction bit 3
+        mainToJunctionStatusMap[36] = 4;  // silence -> junction bit 4
+        mainToJunctionStatusMap[37] = 5;  // berserk -> junction bit 5
+        mainToJunctionStatusMap[38] = 6;  // zombie -> junction bit 6
+        
+        for (int mainBit = 0; mainBit < mainToJunctionStatusMap.length; mainBit++) {
+            int junctionBit = mainToJunctionStatusMap[mainBit];
+            if (junctionBit >= 0 && statusSet.getBit(mainBit)) {
+                result |= (1 << junctionBit);
+            }
+        }
+        return result;
     }
     
     private int serializeElementalDefense(List<Element> defenseElements) {
         int result = 0;
         for (Element element : defenseElements) {
             result |= (1 << element.getValue());
-        }
-        return result;
-    }
-    
-    private int serializeJunctionStatusAttack(StatusEffectSet statusSet) {
-        int result = 0;
-        int[] statusBitMap = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12}; // Skip bit 10
-        for (int i = 0; i < statusBitMap.length; i++) {
-            if (statusSet.getBit(statusBitMap[i])) {
-                result |= (1 << i);
-            }
-        }
-        return result;
-    }
-    
-    private int serializeJunctionStatusDefense(StatusEffectSet statusSet) {
-        int result = 0;
-        int[] statusBitMap = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-        for (int i = 0; i < statusBitMap.length; i++) {
-            if (statusSet.getBit(statusBitMap[i])) {
-                result |= (1 << i);
-            }
         }
         return result;
     }
@@ -719,4 +751,5 @@ public class KernelBinaryParser implements BinaryParserPort {
         // Check for minimum expected size
         return data.length >= MAGIC_SECTION_OFFSET + (EXPECTED_MAGIC_COUNT * MAGIC_STRUCT_SIZE);
     }
-} 
+
+     }  

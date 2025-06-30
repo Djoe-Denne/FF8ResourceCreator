@@ -12,12 +12,12 @@ public enum Element {
     NONE(0, "None"),
     FIRE(1, "Fire"),
     ICE(2, "Ice"),
-    THUNDER(3, "Thunder"),
-    EARTH(4, "Earth"),
-    POISON(5, "Poison"),
-    WIND(6, "Wind"),
-    WATER(7, "Water"),
-    HOLY(8, "Holy");
+    THUNDER(4, "Thunder"),
+    EARTH(8, "Earth"),
+    POISON(16, "Poison"),
+    WIND(32, "Wind"),
+    WATER(64, "Water"),
+    HOLY(128, "Holy");
 
     private final int value;
     private final String displayName;
