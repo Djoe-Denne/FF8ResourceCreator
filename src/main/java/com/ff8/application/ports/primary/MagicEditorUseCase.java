@@ -79,10 +79,7 @@ public interface MagicEditorUseCase {
      */
     MagicDisplayDTO duplicateMagic(int sourceMagicIndex, String newName) throws InvalidMagicDataException;
 
-    /**
-     * Get list of all magic IDs and names for UI dropdowns
-     */
-    List<String> getMagicIndexList();
+
 
     /**
      * Record for validation results

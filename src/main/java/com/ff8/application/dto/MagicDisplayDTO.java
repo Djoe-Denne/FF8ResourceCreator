@@ -90,8 +90,8 @@ public record MagicDisplayDTO(
             errors.add("Index must be non-negative");
         }
         
-        if (magicID < 0 || magicID > 255) {
-            errors.add("Magic ID must be between 0 and 255");
+        if (magicID < 0 || magicID > 345) {
+            errors.add("Magic ID must be between 0 and 345");
         }
         
         if (spellPower < 0 || spellPower > 255) {

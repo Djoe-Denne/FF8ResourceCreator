@@ -38,7 +38,7 @@ public class GeneralTabController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(GeneralTabController.class);
     
     // General section
-    @FXML private ComboBox<String> magicIdComboBox;
+    @FXML private Spinner<Integer> magicIdSpinner;
     @FXML private TextField spellNameField;
     @FXML private TextField spellDescriptionField;
     @FXML private ComboBox<Element> elementComboBox;
@@ -143,6 +143,9 @@ public class GeneralTabController implements Initializable {
     }
     
     private void setupSpinners() {
+        // Magic ID spinner (0-345 based on FF8 magic limit)
+        magicIdSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 345, 0));
+        
         // Spell power spinner
         spellPowerSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 255, 0));
         
@@ -157,9 +160,6 @@ public class GeneralTabController implements Initializable {
     }
     
     private void setupComboBoxes() {
-        // Magic ID combo box with spell names
-        populateMagicIdComboBox();
-        
         // Element combo box
         elementComboBox.getItems().setAll(Element.values());
         elementComboBox.setConverter(new StringConverter<Element>() {
@@ -199,24 +199,12 @@ public class GeneralTabController implements Initializable {
         });
     }
     
-    private void populateMagicIdComboBox() {
-        try {
-            // Load magic ID list from use case
-            var magicIdList = magicEditorUseCase.getMagicIndexList();
-            magicIdComboBox.getItems().addAll(magicIdList);
-            logger.info("Loaded {} magic IDs from resource file", magicIdList.size());
-        } catch (Exception e) {
-            logger.error("Failed to load magic ID list", e);
-            // Fallback to sample data
-            magicIdComboBox.getItems().addAll(
-                "103 - Blizzara", "104 - Blizzaga", "105 - Sleep", "106 - Blind",
-                "107 - Silence", "108 - Berserk", "109 - Bio", "110 - Esuna"
-            );
-        }
-    }
+
     
     private void setupChangeListeners() {
         // Integer field spinners using command pattern
+        magicIdSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
+            onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.MAGIC_ID, getCurrentMagicIndex()), newVal));
         spellPowerSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
             onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.SPELL_POWER, getCurrentMagicIndex()), newVal));
         drawResistSpinner.valueProperty().addListener((obs, oldVal, newVal) -> 
@@ -231,12 +219,6 @@ public class GeneralTabController implements Initializable {
             onFieldChange(new ElementFieldUICommand(magicEditorUseCase, getCurrentMagicIndex()), newVal));
         attackTypeComboBox.valueProperty().addListener((obs, oldVal, newVal) -> 
             onFieldChange(new AttackTypeFieldUICommand(magicEditorUseCase, getCurrentMagicIndex()), newVal));
-        magicIdComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                int id = Integer.parseInt(newVal.split(" - ")[0]);
-                onFieldChange(new IntegerFieldUICommand(magicEditorUseCase, IntegerFieldType.MAGIC_ID, getCurrentMagicIndex()), id);
-            }
-        });
         
         // Target checkboxes using command pattern
         targetDeadCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> 
@@ -334,7 +316,7 @@ public class GeneralTabController implements Initializable {
         try {
             if (magic != null) {
                 // Populate basic fields
-                magicIdComboBox.setValue(magic.magicID() + " - " + magic.spellName());
+                magicIdSpinner.getValueFactory().setValue(magic.magicID());
                 
                 // Display current spell name and description (from translations or extracted data)
                 if (magic.translations() != null) {
@@ -419,7 +401,7 @@ public class GeneralTabController implements Initializable {
         boolean isEditable = magic.isNewlyCreated();
         
         // Basic controls - Magic ID is always editable (can change IDs)
-        magicIdComboBox.setDisable(false); // Always allow ID changes
+        magicIdSpinner.setDisable(false); // Always allow ID changes
         elementComboBox.setDisable(!isEditable);
         attackTypeComboBox.setDisable(!isEditable);
         
@@ -585,7 +567,7 @@ public class GeneralTabController implements Initializable {
     }
     
     private void clearFields() {
-        magicIdComboBox.setValue(null);
+        magicIdSpinner.getValueFactory().setValue(0);
         spellNameField.clear();
         spellDescriptionField.clear();
         spellPowerSpinner.getValueFactory().setValue(0);
@@ -649,7 +631,7 @@ public class GeneralTabController implements Initializable {
     }
     
     private void setControlsEnabled(boolean enabled) {
-        magicIdComboBox.setDisable(!enabled);
+        magicIdSpinner.setDisable(!enabled);
         spellPowerSpinner.setDisable(!enabled);
         drawResistSpinner.setDisable(!enabled);
         hitCountSpinner.setDisable(!enabled);

@@ -31,8 +31,8 @@ public class MagicValidationService {
         var errors = new ArrayList<String>();
 
         // Basic field validation
-        if (magic.getMagicID() < 0 || magic.getMagicID() > 255) {
-            errors.add("Magic ID must be 0-255");
+        if (magic.getMagicID() < 0 || magic.getMagicID() > 345) {
+            errors.add("Magic ID must be 0-345");
         }
 
         if (magic.getSpellPower() < 0 || magic.getSpellPower() > 255) {
@@ -125,7 +125,7 @@ public class MagicValidationService {
     public boolean isValidMagicId(int magicId) {
         // In a real implementation, this would check against a repository
         // For now, just basic range validation
-        return magicId >= 0 && magicId <= 255;
+        return magicId >= 0 && magicId <= 345;
     }
 
     /**

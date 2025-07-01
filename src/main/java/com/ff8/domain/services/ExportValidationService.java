@@ -179,8 +179,8 @@ public class ExportValidationService {
         }
         
         // Validate magic ID is reasonable
-        if (magic.getMagicID() < 0 || magic.getMagicID() > 65535) {
-            warnings.add(spellId + ": Magic ID " + magic.getMagicID() + " is outside normal range (0-65535)");
+        if (magic.getMagicID() < 0 || magic.getMagicID() > 345) {
+            warnings.add(spellId + ": Magic ID " + magic.getMagicID() + " is outside supported range (0-345)");
         }
         
         // Check for potential issues with spell properties

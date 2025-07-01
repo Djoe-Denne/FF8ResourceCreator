@@ -34,7 +34,7 @@ class MagicValidationServiceTest {
     class BasicFieldValidation {
 
         @ParameterizedTest
-        @ValueSource(ints = {0, 1, 127, 255})
+        @ValueSource(ints = {0, 1, 127, 255, 300, 345})
         @DisplayName("Should accept valid magic ID values")
         void shouldAcceptValidMagicIdValues(int magicId) {
             // Given
@@ -49,7 +49,7 @@ class MagicValidationServiceTest {
         }
 
         @ParameterizedTest
-        @ValueSource(ints = {-1, 256, 1000})
+        @ValueSource(ints = {-1, 346, 1000})
         @DisplayName("Should reject invalid magic ID values")
         void shouldRejectInvalidMagicIdValues(int invalidMagicId) {
             // Given
@@ -290,7 +290,7 @@ class MagicValidationServiceTest {
         void shouldIdentifyInvalidMagicDataCorrectly() {
             // Given
             MagicData invalidMagic = MagicData.builder()
-                    .magicID(300) // Invalid - over 255
+                    .magicID(400) // Invalid - over 345
                     .spellPower(-10) // Invalid - negative
                     .hitCount(0) // Invalid - must be at least 1
                     .drawResist(500) // Invalid - over 255
@@ -304,7 +304,7 @@ class MagicValidationServiceTest {
         }
 
         @ParameterizedTest
-        @ValueSource(ints = {-50, -1, 256, 300, 1000})
+        @ValueSource(ints = {-50, -1, 346, 400, 1000})
         @DisplayName("Should reject invalid magic IDs")
         void shouldRejectInvalidMagicIds(int invalidMagicId) {
             // Given

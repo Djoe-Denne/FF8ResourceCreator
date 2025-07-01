@@ -16,7 +16,7 @@
             
             <!-- Row 1 -->
             <Label text="Magic ID" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-            <ComboBox fx:id="magicIdComboBox" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="200" />
+            <Spinner fx:id="magicIdSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="100" editable="true" />
             
             <Label text="Element" GridPane.columnIndex="2" GridPane.rowIndex="0" />
             <ComboBox fx:id="elementComboBox" GridPane.columnIndex="3" GridPane.rowIndex="0" maxWidth="150" />

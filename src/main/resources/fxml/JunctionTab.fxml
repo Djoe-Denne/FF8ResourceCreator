@@ -67,8 +67,8 @@
                </HBox>
                <RadioButton fx:id="nonElementalAttackRadio" text="Non-Elemental" />
                <VBox spacing="5">
-                  <Slider fx:id="elementalAttackSlider" min="0" max="100" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
-                  <Label fx:id="elementalAttackLabel" text="80%" alignment="CENTER" />
+                  <Slider fx:id="elementalAttackSlider" min="0" max="255" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="51" />
+                  <Label fx:id="elementalAttackLabel" text="80" alignment="CENTER" />
                </VBox>
             </VBox>
             
@@ -87,8 +87,8 @@
                   <CheckBox fx:id="holyDefenseCheck" text="Holy" />
                </HBox>
                <VBox spacing="5">
-                  <Slider fx:id="elementalDefenseSlider" min="0" max="100" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
-                  <Label fx:id="elementalDefenseLabel" text="80%" alignment="CENTER" />
+                  <Slider fx:id="elementalDefenseSlider" min="0" max="255" value="80" showTickLabels="true" showTickMarks="true" majorTickUnit="51" />
+                  <Label fx:id="elementalDefenseLabel" text="80" alignment="CENTER" />
                </VBox>
             </VBox>
          </VBox>
@@ -126,8 +126,8 @@
                   <CheckBox fx:id="junctionDrainCheck" text="Drain" GridPane.columnIndex="4" GridPane.rowIndex="1" />
                </GridPane>
                <VBox spacing="5">
-                  <Slider fx:id="statusAttackSlider" min="0" max="100" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
-                  <Label fx:id="statusAttackLabel" text="0%" alignment="CENTER" />
+                  <Slider fx:id="statusAttackSlider" min="0" max="255" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="51" />
+                  <Label fx:id="statusAttackLabel" text="0" alignment="CENTER" />
                </VBox>
             </VBox>
             
@@ -164,8 +164,8 @@
                   <CheckBox fx:id="junctionDrainDefenseCheck" text="Drain" GridPane.columnIndex="5" GridPane.rowIndex="1" />
                </GridPane>
                <VBox spacing="5">
-                  <Slider fx:id="statusDefenseSlider" min="0" max="100" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="20" />
-                  <Label fx:id="statusDefenseLabel" text="0%" alignment="CENTER" />
+                  <Slider fx:id="statusDefenseSlider" min="0" max="255" value="0" showTickLabels="true" showTickMarks="true" majorTickUnit="51" />
+                  <Label fx:id="statusDefenseLabel" text="0" alignment="CENTER" />
                </VBox>
             </VBox>
          </VBox>

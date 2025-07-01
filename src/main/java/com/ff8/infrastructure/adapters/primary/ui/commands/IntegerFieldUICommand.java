@@ -67,7 +67,22 @@ public class IntegerFieldUICommand extends AbstractFieldCommand<Integer, Integer
             return false;
         }
         
-        // Validate ranges based on field type - most FF8 values are 0-255
-        return newValue >= 0 && newValue <= 255;
+        // Validate ranges based on field type
+        switch (fieldType) {
+            case MAGIC_ID:
+                // Magic ID can be higher for extended ranges
+                return newValue >= 0 && newValue <= 345;
+            case DRAW_RESIST:
+            case HIT_COUNT:
+            case STATUS_ATTACK:
+            case SPELL_POWER:
+            case ELEMENTAL_ATTACK_VALUE:
+            case ELEMENTAL_DEFENSE_VALUE:
+            case STATUS_ATTACK_VALUE:
+            case STATUS_DEFENSE_VALUE:
+            default:
+                // Most other FF8 values are 0-255
+                return newValue >= 0 && newValue <= 255;
+        }
     }
 } 

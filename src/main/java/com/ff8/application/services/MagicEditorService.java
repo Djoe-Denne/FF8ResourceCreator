@@ -241,15 +241,5 @@ public class MagicEditorService extends AbstractSubject<MagicDataChangeEvent> im
         magicRepository.deleteByIndex(magicIndex);
     }
 
-    @Override
-    public List<String> getMagicIndexList() {
-        // Get magic data from repository in kernel order (sorted by ID)
-        List<MagicData> allMagic = magicRepository.findAll();
-        
-        // Sort by magic ID to ensure kernel order and format as "ID - Name"
-        return allMagic.stream()
-            .sorted((m1, m2) -> Integer.compare(m1.getIndex(), m2.getIndex()))
-            .map(magic -> String.format("%03d - %s", magic.getIndex(), magic.getExtractedSpellName()))
-            .toList();
-    }
+
 } 
