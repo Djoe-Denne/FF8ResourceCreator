@@ -433,7 +433,7 @@ public class KernelBinaryParser implements BinaryParserPort {
     }
     
     // Helper methods for complex field parsing
-        private List<Element> parseElementalDefense(int defenseElementByte) {
+    private List<Element> parseElementalDefense(int defenseElementByte) {
         List<Element> elements = new ArrayList<>();
         int[] elementBitMap = {1, 2, 4, 8, 16, 32, 64, 128};
         for (int i = 0; i < 8; i++) {
@@ -516,7 +516,7 @@ public class KernelBinaryParser implements BinaryParserPort {
     private int serializeElementalDefense(List<Element> defenseElements) {
         int result = 0;
         for (Element element : defenseElements) {
-            result |= (1 << element.getValue());
+            result |= element.getValue();
         }
         return result;
     }

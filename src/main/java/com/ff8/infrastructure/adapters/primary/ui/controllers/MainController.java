@@ -33,8 +33,6 @@ public class MainController implements Initializable {
     @FXML private MenuItem openKernelMenuItem;
     @FXML private MenuItem openMagicBinaryMenuItem;
     @FXML private MenuItem newMagicMenuItem;
-    @FXML private MenuItem saveMenuItem;
-    @FXML private MenuItem saveAsMenuItem;
     @FXML private MenuItem exportMenuItem;
     @FXML private MenuItem exitMenuItem;
     @FXML private MenuItem aboutMenuItem;
@@ -63,7 +61,6 @@ public class MainController implements Initializable {
     
     // Current file information
     private File currentFile;
-    private boolean hasUnsavedChanges = false;
     
     public MainController(ApplicationConfig config) {
         this.kernelFileUseCase = config.getKernelFileUseCase();
@@ -146,17 +143,15 @@ public class MainController implements Initializable {
         openKernelMenuItem.setOnAction(e -> openKernelFile());
         openMagicBinaryMenuItem.setOnAction(e -> openMagicBinary());
         newMagicMenuItem.setOnAction(e -> createNewMagic());
-        saveMenuItem.setOnAction(e -> saveFile());
-        saveAsMenuItem.setOnAction(e -> saveAsFile());
         exportMenuItem.setOnAction(e -> exportNewlyCreatedMagic());
         exitMenuItem.setOnAction(e -> exitApplication());
         aboutMenuItem.setOnAction(e -> showAbout());
         
-        // Initially disable save, new magic, and export options
-        newMagicMenuItem.setDisable(true);
-        saveMenuItem.setDisable(true);
-        saveAsMenuItem.setDisable(true);
-        exportMenuItem.setDisable(true);
+        // New Magic is always enabled
+        newMagicMenuItem.setDisable(false);
+        
+        // Export is enabled if there are newly created magic spells
+        exportMenuItem.setDisable(!localizedExportUseCase.hasNewlyCreatedMagic());
     }
     
     private void setupStatusBar() {
@@ -217,51 +212,7 @@ public class MainController implements Initializable {
     }
     
     @FXML
-    private void saveFile() {
-        if (currentFile != null) {
-            saveKernelFile(currentFile);
-        } else {
-            saveAsFile();
-        }
-    }
-    
-    @FXML
-    private void saveAsFile() {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Save Kernel.bin File");
-        fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Kernel Files", "*.bin")
-        );
-        
-        if (currentFile != null) {
-            fileChooser.setInitialDirectory(currentFile.getParentFile());
-            fileChooser.setInitialFileName(currentFile.getName());
-        } else {
-            // Set initial directory from user preferences if no current file
-            var preferences = userPreferencesUseCase.getCurrentPreferences();
-            if (preferences.getLastOpenDirectory() != null && 
-                java.nio.file.Files.exists(preferences.getLastOpenDirectory()) &&
-                java.nio.file.Files.isDirectory(preferences.getLastOpenDirectory())) {
-                
-                fileChooser.setInitialDirectory(preferences.getLastOpenDirectory().toFile());
-            }
-        }
-        
-        File file = fileChooser.showSaveDialog(getStage());
-        if (file != null) {
-            // Update last opened directory preference
-            userPreferencesUseCase.updateLastOpenDirectory(file.getParentFile().toPath());
-            saveKernelFile(file);
-        }
-    }
-    
-    @FXML
     private void createNewMagic() {
-        if (currentFile == null) {
-            showError("No file loaded", new IllegalStateException("Please load a kernel.bin file first"));
-            return;
-        }
-        
         // Show dialog to get spell name
         TextInputDialog dialog = new TextInputDialog("New Spell");
         dialog.setTitle("Create New Magic");
@@ -285,7 +236,7 @@ public class MainController implements Initializable {
                         updateProgress(1, 1);
                         
                         javafx.application.Platform.runLater(() -> {
-                            markAsChanged();
+                            updateUIState(); // Update export menu state
                             updateMessage("New magic created: " + spellName.trim());
                         });
                         
@@ -429,30 +380,7 @@ public class MainController implements Initializable {
     
     @FXML
     private void exitApplication() {
-        if (hasUnsavedChanges) {
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Unsaved Changes");
-            alert.setHeaderText("You have unsaved changes");
-            alert.setContentText("Do you want to save before exiting?");
-            
-            ButtonType saveAndExit = new ButtonType("Save and Exit");
-            ButtonType exitWithoutSaving = new ButtonType("Exit without Saving");
-            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            
-            alert.getButtonTypes().setAll(saveAndExit, exitWithoutSaving, cancel);
-            
-            alert.showAndWait().ifPresent(response -> {
-                if (response == saveAndExit) {
-                    saveFile();
-                    System.exit(0);
-                } else if (response == exitWithoutSaving) {
-                    System.exit(0);
-                }
-                // Cancel - do nothing
-            });
-        } else {
-            System.exit(0);
-        }
+        System.exit(0);
     }
     
     @FXML
@@ -491,7 +419,6 @@ public class MainController implements Initializable {
                 // Update UI on JavaFX thread
                 javafx.application.Platform.runLater(() -> {
                     currentFile = file;
-                    hasUnsavedChanges = false;
                     updateUIState();
                     updateMessage("Loaded kernel file: " + file.getName() + " (magic list updated automatically)");
                 });
@@ -533,8 +460,7 @@ public class MainController implements Initializable {
                 // Update UI on JavaFX thread
                 javafx.application.Platform.runLater(() -> {
                     // Note: Don't change currentFile for magic binary - we want to keep the kernel file as current
-                    hasUnsavedChanges = true; // Mark as changed since we added new magic
-                    updateUIState();
+                    updateUIState(); // Update export menu state since we added new magic
                     updateMessage("Added magic from binary file: " + file.getName() + " (magic list updated automatically)");
                 });
                 
@@ -561,62 +487,12 @@ public class MainController implements Initializable {
         loadThread.start();
     }
     
-    private void saveKernelFile(File file) {
-        Task<Void> saveTask = new Task<>() {
-            @Override
-            protected Void call() throws Exception {
-                updateMessage("Saving kernel file...");
-                updateProgress(0, 1);
-                
-                // Save the kernel file
-                kernelFileUseCase.saveKernelFile(file.getAbsolutePath());
-                updateProgress(1, 1);
-                
-                javafx.application.Platform.runLater(() -> {
-                    currentFile = file;
-                    hasUnsavedChanges = false;
-                    updateUIState();
-                    updateMessage("Saved to " + file.getName());
-                });
-                
-                return null;
-            }
-            
-            @Override
-            protected void failed() {
-                javafx.application.Platform.runLater(() -> {
-                    showError("Failed to save kernel file", getException());
-                    updateMessage("Failed to save file");
-                });
-            }
-        };
-        
-        // Bind progress and status
-        progressBar.progressProperty().bind(saveTask.progressProperty());
-        statusLabel.textProperty().bind(saveTask.messageProperty());
-        progressBar.visibleProperty().bind(saveTask.runningProperty());
-        
-        // Run the task
-        Thread saveThread = new Thread(saveTask);
-        saveThread.setDaemon(true);
-        saveThread.start();
-    }
+
     
     private void updateUIState() {
-        boolean hasFile = currentFile != null;
-        
-        if (newMagicMenuItem != null) {
-            newMagicMenuItem.setDisable(!hasFile);
-        }
-        if (saveMenuItem != null) {
-            saveMenuItem.setDisable(!hasFile || !hasUnsavedChanges);
-        }
-        if (saveAsMenuItem != null) {
-            saveAsMenuItem.setDisable(!hasFile);
-        }
+        // Export is enabled if there are newly created magic spells
         if (exportMenuItem != null) {
-            // Export is enabled if we have a file loaded and there are newly created magic spells
-            boolean hasNewlyCreatedMagic = hasFile && localizedExportUseCase != null && 
+            boolean hasNewlyCreatedMagic = localizedExportUseCase != null && 
                 localizedExportUseCase.hasNewlyCreatedMagic();
             exportMenuItem.setDisable(!hasNewlyCreatedMagic);
         }
@@ -628,9 +504,6 @@ public class MainController implements Initializable {
                 String title = "FF8 Magic Creator";
                 if (currentFile != null) {
                     title += " - " + currentFile.getName();
-                    if (hasUnsavedChanges) {
-                        title += " *";
-                    }
                 }
                 stage.setTitle(title);
             }
@@ -657,15 +530,7 @@ public class MainController implements Initializable {
         return (Stage) menuBar.getScene().getWindow();
     }
     
-    /**
-     * Mark that changes have been made
-     */
-    public void markAsChanged() {
-        if (!hasUnsavedChanges) {
-            hasUnsavedChanges = true;
-            updateUIState();
-        }
-    }
+
     
     /**
      * Get the magic list model

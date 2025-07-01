@@ -13,9 +13,6 @@
                <SeparatorMenuItem />
                <MenuItem fx:id="newMagicMenuItem" onAction="#createNewMagic" text="New Magic..." accelerator="Ctrl+N" />
                <SeparatorMenuItem />
-               <MenuItem fx:id="saveMenuItem" onAction="#saveFile" text="Save" accelerator="Ctrl+S" />
-               <MenuItem fx:id="saveAsMenuItem" onAction="#saveAsFile" text="Save As..." accelerator="Ctrl+Shift+S" />
-               <SeparatorMenuItem />
                <MenuItem fx:id="exportMenuItem" onAction="#exportNewlyCreatedMagic" text="Export Newly Created Magic..." accelerator="Ctrl+E" />
                <SeparatorMenuItem />
                <MenuItem fx:id="exitMenuItem" onAction="#exitApplication" text="Exit" accelerator="Ctrl+Q" />

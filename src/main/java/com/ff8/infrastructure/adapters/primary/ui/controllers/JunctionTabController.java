@@ -685,11 +685,6 @@ public class JunctionTabController implements Initializable {
             logger.debug("Executing command: {} with value: {}", command.getDescription(), newValue);
             command.execute(newValue);
             
-            // Mark main controller as having changes
-            if (mainController != null) {
-                mainController.markAsChanged();
-            }
-            
         } catch (Exception e) {
             logger.error("Error executing command: {} with value: {}", command.getDescription(), newValue, e);
             showError("Failed to save changes", e.getMessage());

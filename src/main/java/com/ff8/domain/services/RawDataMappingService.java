@@ -190,7 +190,7 @@ public class RawDataMappingService {
     private int serializeElementalDefense(java.util.List<com.ff8.domain.entities.enums.Element> defenseElements) {
         int result = 0;
         for (com.ff8.domain.entities.enums.Element element : defenseElements) {
-            result |= (1 << element.getValue());
+            result |= element.getValue();
         }
         return result;
     }

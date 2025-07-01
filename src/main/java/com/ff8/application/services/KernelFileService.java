@@ -122,10 +122,12 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
                 
                 // Build translations for this magic entry
                 SpellTranslations translations = buildSpellTranslations(languageTranslations, i);
-                
+
                 // Set as newly created and assign proper index with translations
                 magic = magic.toBuilder()
                     .index(nextIndex)
+                    .extractedSpellName(translations.getEnglishName())
+                    .extractedSpellDescription(translations.getEnglishDescription())
                     .isNewlyCreated(true)
                     .translations(translations)
                     .build();
