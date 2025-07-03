@@ -538,4 +538,18 @@ public class MainController implements Initializable {
     public MagicListModel getMagicListModel() {
         return magicListModel;
     }
+    
+    /**
+     * Get the magic editor use case
+     */
+    public MagicEditorUseCase getMagicEditorUseCase() {
+        return magicEditorUseCase;
+    }
+    
+    /**
+     * Refresh the UI state (e.g., update export menu state after new magic is created)
+     */
+    public void refreshUIState() {
+        updateUIState();
+    }
 } 

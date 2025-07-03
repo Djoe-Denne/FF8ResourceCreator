@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -101,7 +102,7 @@ public class MagicListController implements Initializable {
             }
         });
         
-        // Set row factory to apply styling for newly created magic
+        // Set row factory to apply styling for newly created magic and add context menu
         magicTable.setRowFactory(tv -> {
             TableRow<MagicDisplayDTO> row = new TableRow<>() {
                 @Override
@@ -121,8 +122,95 @@ public class MagicListController implements Initializable {
                     }
                 }
             };
+            
+            // Add context menu to non-empty rows
+            row.itemProperty().addListener((obs, oldItem, newItem) -> {
+                if (newItem != null) {
+                    ContextMenu contextMenu = createContextMenu(newItem);
+                    row.setContextMenu(contextMenu);
+                } else {
+                    row.setContextMenu(null);
+                }
+            });
+            
             return row;
         });
+    }
+    
+    /**
+     * Create context menu for a magic item
+     */
+    private ContextMenu createContextMenu(MagicDisplayDTO magic) {
+        ContextMenu contextMenu = new ContextMenu();
+        
+        // Copy menu item
+        MenuItem copyMenuItem = new MenuItem("Copy");
+        copyMenuItem.setOnAction(e -> copyMagic(magic));
+        
+        contextMenu.getItems().add(copyMenuItem);
+        
+        return contextMenu;
+    }
+    
+    /**
+     * Copy/duplicate the specified magic
+     */
+    private void copyMagic(MagicDisplayDTO magic) {
+        if (mainController == null) {
+            logger.error("Cannot copy magic: MainController is null");
+            showError("Copy Error", "Unable to access magic editor functionality.");
+            return;
+        }
+        
+        try {
+            // Create a dialog to get the new spell name
+            TextInputDialog dialog = new TextInputDialog(magic.spellName() + " Copy");
+            dialog.setTitle("Copy Magic Spell");
+            dialog.setHeaderText("Create a copy of '" + magic.spellName() + "'");
+            dialog.setContentText("Enter name for the copied spell:");
+            
+            Optional<String> result = dialog.showAndWait();
+            if (result.isPresent() && !result.get().trim().isEmpty()) {
+                String newName = result.get().trim();
+                
+                // Call the duplicate magic method through the main controller
+                var magicEditorUseCase = mainController.getMagicEditorUseCase();
+                if (magicEditorUseCase != null) {
+                    MagicDisplayDTO duplicatedMagic = magicEditorUseCase.duplicateMagic(magic.index(), newName);
+                    
+                    logger.info("Successfully copied magic '{}' (index: {}) to '{}' (index: {})", 
+                               magic.spellName(), magic.index(), 
+                               duplicatedMagic.spellName(), duplicatedMagic.index());
+                    
+                    // Update UI state to enable export menu since we now have newly created magic
+                    mainController.refreshUIState();
+                    
+                    // Select the newly created magic
+                    Platform.runLater(() -> {
+                        if (magicListModel != null) {
+                            magicListModel.setSelectedMagic(duplicatedMagic);
+                        }
+                    });
+                } else {
+                    logger.error("Cannot copy magic: MagicEditorUseCase is null");
+                    showError("Copy Error", "Unable to access magic editor functionality.");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error copying magic: {}", e.getMessage(), e);
+            showError("Copy Error", "Failed to copy magic: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Show error dialog
+     */
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
     
     private void setupSearchField() {
