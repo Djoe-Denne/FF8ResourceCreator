@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class TextOffsetCalculationService {
     
-    private static final int BINARY_OFFSET_ADJUSTMENT = 511;
+    private static final int BINARY_OFFSET_ADJUSTMENT = 511 + 1584; // 511 is the offset for the last spell description, 1584 is the offset for the last spell name (Official English Kernel)
     
     /**
      * Represents the layout information for a single spell's text data
