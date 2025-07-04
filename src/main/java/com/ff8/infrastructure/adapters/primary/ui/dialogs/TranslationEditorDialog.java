@@ -187,14 +187,14 @@ public class TranslationEditorDialog {
         // Name column
         TableColumn<TranslationRow, String> nameColumn = new TableColumn<>("Spell Name");
         nameColumn.setCellValueFactory(cellData -> cellData.getValue().nameProperty());
-        nameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        nameColumn.setCellFactory(column -> createCommitOnFocusLostTextFieldCell());
         nameColumn.setOnEditCommit(event -> event.getRowValue().setName(event.getNewValue()));
         nameColumn.setMinWidth(150);
         
         // Description column
         TableColumn<TranslationRow, String> descriptionColumn = new TableColumn<>("Description");
         descriptionColumn.setCellValueFactory(cellData -> cellData.getValue().descriptionProperty());
-        descriptionColumn.setCellFactory(TextFieldTableCell.forTableColumn());
+        descriptionColumn.setCellFactory(column -> createCommitOnFocusLostTextFieldCell());
         descriptionColumn.setOnEditCommit(event -> event.getRowValue().setDescription(event.getNewValue()));
         descriptionColumn.setMinWidth(200);
         
@@ -245,6 +245,27 @@ public class TranslationEditorDialog {
         buttonPanel.getChildren().addAll(addButton, removeButton, spacer, okButton, cancelButton);
         
         return buttonPanel;
+    }
+    
+    /**
+     * Creates a TextFieldTableCell that commits changes on focus loss as well as Enter key
+     */
+    private TextFieldTableCell<TranslationRow, String> createCommitOnFocusLostTextFieldCell() {
+        return new TextFieldTableCell<TranslationRow, String>() {
+            @Override
+            public void startEdit() {
+                super.startEdit();
+                TextField textField = (TextField) getGraphic();
+                if (textField != null) {
+                    // Commit edit when focus is lost
+                    textField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+                        if (wasFocused && !isNowFocused && isEditing()) {
+                            commitEdit(textField.getText());
+                        }
+                    });
+                }
+            }
+        };
     }
     
     private void loadTranslations(SpellTranslations translations) {
