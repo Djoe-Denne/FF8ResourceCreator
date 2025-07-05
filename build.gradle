@@ -47,6 +47,161 @@ application {
     mainClass = 'com.ff8.Main'
 }
 
+// Fix JAR manifest for direct execution
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'com.ff8.Main',
+            'Implementation-Title': 'FF8 Magic Creator',
+            'Implementation-Version': version,
+            'Implementation-Vendor': 'FF8 Magic Creator Team'
+        )
+    }
+    
+    // Create a fat JAR with all dependencies
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+// Create a distribution ZIP/TAR
+distributions {
+    main {
+        distributionBaseName = 'ff8-magic-creator'
+        contents {
+            from(jar)
+            from('README.md') {
+                into '.'
+            }
+            from('FF8_Magic_Creator_User_Guide.md') {
+                into 'docs'
+            }
+            from('FF8_Magic_Editor_Documentation.md') {
+                into 'docs'
+            }
+        }
+    }
+}
+
+// Windows executable creation task
+task createWindowsExecutable(type: Exec) {
+    dependsOn jar
+    
+    doFirst {
+        // Ensure output directory exists
+        file("${buildDir}/jpackage").mkdirs()
+    }
+    
+    commandLine 'jpackage',
+        '--type', 'app-image',
+        '--input', "${buildDir}/libs",
+        '--dest', "${buildDir}/jpackage",
+        '--name', 'FF8MagicCreator',
+        '--main-jar', "${project.name}-${version}.jar",
+        '--main-class', 'com.ff8.Main',
+        '--description', 'FF8 Magic Creator - Modern Kernel.bin Editor',
+        '--vendor', 'FF8 Magic Creator Team',
+        '--app-version', version,
+        '--java-options', '--enable-preview'
+    
+    doLast {
+        println "Windows application created at: ${buildDir}/jpackage/FF8MagicCreator/"
+        println "Run the executable: ${buildDir}/jpackage/FF8MagicCreator/FF8MagicCreator.exe"
+    }
+}
+
+// Alternative task to create MSI installer (requires WiX)
+task createWindowsInstaller(type: Exec) {
+    dependsOn jar
+    
+    doFirst {
+        file("${buildDir}/jpackage").mkdirs()
+    }
+    
+    commandLine 'jpackage',
+        '--type', 'msi',
+        '--input', "${buildDir}/libs",
+        '--dest', "${buildDir}/jpackage",
+        '--name', 'FF8MagicCreator',
+        '--main-jar', "${project.name}-${version}.jar",
+        '--main-class', 'com.ff8.Main',
+        '--description', 'FF8 Magic Creator - Modern Kernel.bin Editor',
+        '--vendor', 'FF8 Magic Creator Team',
+        '--app-version', version,
+        '--win-shortcut',
+        '--win-dir-chooser',
+        '--java-options', '--enable-preview'
+    
+    doLast {
+        println "Windows installer created at: ${buildDir}/jpackage/FF8MagicCreator-${version}.msi"
+    }
+}
+
+// Linux executable creation task  
+task createLinuxExecutable(type: Exec) {
+    dependsOn jar
+    
+    doFirst {
+        file("${buildDir}/jpackage").mkdirs()
+    }
+    
+    commandLine 'jpackage',
+        '--type', 'deb',
+        '--input', "${buildDir}/libs",
+        '--dest', "${buildDir}/jpackage",
+        '--name', 'ff8-magic-creator',
+        '--main-jar', "${project.name}-${version}.jar",
+        '--main-class', 'com.ff8.Main',
+        '--description', 'FF8 Magic Creator - Modern Kernel.bin Editor',
+        '--vendor', 'FF8 Magic Creator Team',
+        '--app-version', version,
+        '--linux-shortcut',
+        '--java-options', '--enable-preview'
+}
+
+// macOS executable creation task
+task createMacExecutable(type: Exec) {
+    dependsOn jar
+    
+    doFirst {
+        file("${buildDir}/jpackage").mkdirs()
+    }
+    
+    commandLine 'jpackage',
+        '--type', 'dmg',
+        '--input', "${buildDir}/libs",
+        '--dest', "${buildDir}/jpackage",
+        '--name', 'FF8MagicCreator',
+        '--main-jar', "${project.name}-${version}.jar",
+        '--main-class', 'com.ff8.Main',
+        '--description', 'FF8 Magic Creator - Modern Kernel.bin Editor',
+        '--vendor', 'FF8 Magic Creator Team',
+        '--app-version', version,
+        '--java-options', '--enable-preview'
+}
+
+// Convenience task to create executable for current platform
+task createExecutable() {
+    dependsOn jar
+    
+    doFirst {
+        def os = System.getProperty('os.name').toLowerCase()
+        if (os.contains('win')) {
+            println "Detected Windows - will create Windows executable..."
+            dependsOn createWindowsExecutable
+        } else if (os.contains('linux')) {
+            println "Detected Linux - will create Linux package..."
+            dependsOn createLinuxExecutable
+        } else if (os.contains('mac')) {
+            println "Detected macOS - will create macOS package..."
+            dependsOn createMacExecutable
+        } else {
+            throw new GradleException("Unsupported OS: ${os}")
+        }
+    }
+}
+
 tasks.named('test') {
     useJUnitPlatform()
     
