@@ -184,18 +184,9 @@ Proper handling of all 48 FF8 status effects with exact binary preservation.
 
 ### Supported Files
 - **kernel.bin**: Main magic data file
-- **kernel.bin.bak**: Backup files
-- Custom extracted sections
-
-### Game Compatibility
-- **FF8 PC (Steam)**: ✅ Fully supported
-- **FF8 Remastered**: ✅ Fully supported  
-- **FF8 PlayStation**: ✅ Supported (with conversion)
-- **FF8 Mobile**: ⚠️ Partial support
 
 ## 🚨 Important Notes
 
-- **Always backup your kernel.bin** before editing
 - **Test changes thoroughly** in-game before distributing
 - **Binary preservation** ensures round-trip accuracy
 - **Status effects** use exact 48-bit representation
