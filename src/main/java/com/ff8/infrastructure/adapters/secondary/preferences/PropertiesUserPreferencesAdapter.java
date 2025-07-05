@@ -14,11 +14,48 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
- * Infrastructure adapter that persists user preferences using Java Properties files.
- * Stores preferences in the appropriate application data directory for each platform:
- * - Windows: %APPDATA%\FF8MagicCreator
- * - macOS: ~/Library/Application Support/FF8MagicCreator  
- * - Linux/Unix: ~/.config/ff8magic-creator
+ * Cross-platform user preferences adapter using Java Properties files.
+ * 
+ * <p>This class implements the {@link UserPreferencesPort} interface as a Secondary Adapter
+ * in the hexagonal architecture, providing persistent storage for user preferences and
+ * application settings. It follows platform-specific conventions for storing application
+ * data to ensure a native user experience across different operating systems.</p>
+ * 
+ * <p>Platform-specific storage locations:</p>
+ * <ul>
+ *   <li><strong>Windows:</strong> {@code %APPDATA%\FF8MagicCreator\preferences.properties}</li>
+ *   <li><strong>macOS:</strong> {@code ~/Library/Application Support/FF8MagicCreator/preferences.properties}</li>
+ *   <li><strong>Linux/Unix:</strong> {@code ~/.config/ff8magic-creator/preferences.properties}</li>
+ * </ul>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Cross-platform compatibility with OS-specific data directories</li>
+ *   <li>Automatic directory creation for first-time users</li>
+ *   <li>Robust error handling with fallback mechanisms</li>
+ *   <li>Type-safe property parsing with default values</li>
+ *   <li>Comprehensive logging for debugging and monitoring</li>
+ *   <li>Support for XDG Base Directory Specification on Linux</li>
+ * </ul>
+ * 
+ * <p>The adapter stores the following preference categories:</p>
+ * <ul>
+ *   <li><strong>Window Settings:</strong> Size, position, and maximized state</li>
+ *   <li><strong>File Paths:</strong> Last opened directory for file dialogs</li>
+ *   <li><strong>Application Settings:</strong> User customizations and options</li>
+ * </ul>
+ * 
+ * <p>Error handling strategy:</p>
+ * <ul>
+ *   <li>Graceful degradation when preferences cannot be loaded</li>
+ *   <li>Fallback to user home directory if platform directories are unavailable</li>
+ *   <li>Validation of loaded preferences with sensible defaults</li>
+ *   <li>Clear error reporting through {@link PreferencesException}</li>
+ * </ul>
+ * 
+ * @author FF8 Magic Creator Team
+ * @version 1.0
+ * @since 1.0
  */
 public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     private static final Logger logger = LoggerFactory.getLogger(PropertiesUserPreferencesAdapter.class);
@@ -36,6 +73,17 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     @Getter
     private final Path preferencesFile;
     
+    /**
+     * Constructs a new PropertiesUserPreferencesAdapter with platform-appropriate storage.
+     * 
+     * <p>This constructor automatically determines the correct application data directory
+     * for the current operating system and creates the necessary directory structure.
+     * The preferences file path is logged for debugging purposes.</p>
+     * 
+     * <p>Directory creation is performed during construction to ensure the preferences
+     * can be saved when needed. If directory creation fails, a warning is logged
+     * but the adapter remains functional.</p>
+     */
     public PropertiesUserPreferencesAdapter() {
         // Determine the appropriate application data directory for the current platform
         Path appDir = getApplicationDataDirectory();
@@ -52,7 +100,21 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Get the appropriate application data directory based on the operating system
+     * Determines the appropriate application data directory based on the operating system.
+     * 
+     * <p>This method implements platform-specific logic to select the correct directory
+     * for storing application data, following each platform's conventions:</p>
+     * 
+     * <ul>
+     *   <li><strong>Windows:</strong> Uses {@code %APPDATA%} environment variable</li>
+     *   <li><strong>macOS:</strong> Uses {@code ~/Library/Application Support}</li>
+     *   <li><strong>Linux/Unix:</strong> Follows XDG Base Directory Specification</li>
+     * </ul>
+     * 
+     * <p>Fallback mechanisms are in place for each platform in case the preferred
+     * locations are not available.</p>
+     * 
+     * @return Path to the appropriate application data directory
      */
     private Path getApplicationDataDirectory() {
         String osName = System.getProperty("os.name").toLowerCase();
@@ -81,6 +143,22 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Loads user preferences from the platform-specific preferences file.
+     * This method performs the following operations:</p>
+     * <ul>
+     *   <li>Checks for preferences file existence</li>
+     *   <li>Loads properties from the file using Java Properties format</li>
+     *   <li>Parses and validates all preference values</li>
+     *   <li>Applies default values for missing or invalid preferences</li>
+     *   <li>Validates file paths and removes invalid entries</li>
+     * </ul>
+     * 
+     * @return Optional containing loaded preferences, or empty if no preferences exist
+     * @throws PreferencesException if there's an error reading or parsing preferences
+     */
     @Override
     public Optional<UserPreferences> loadPreferences() throws PreferencesException {
         if (!Files.exists(preferencesFile)) {
@@ -102,6 +180,21 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Saves user preferences to the platform-specific preferences file.
+     * This method performs the following operations:</p>
+     * <ul>
+     *   <li>Converts UserPreferences object to Java Properties format</li>
+     *   <li>Writes properties to the preferences file with a descriptive header</li>
+     *   <li>Ensures atomic write operation to prevent corruption</li>
+     *   <li>Logs the operation for debugging purposes</li>
+     * </ul>
+     * 
+     * @param preferences The user preferences to save
+     * @throws PreferencesException if there's an error writing preferences
+     */
     @Override
     public void savePreferences(UserPreferences preferences) throws PreferencesException {
         Properties properties = new Properties();
@@ -118,11 +211,27 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
         }
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Checks if a preferences file exists in the platform-specific location.</p>
+     * 
+     * @return true if preferences file exists, false otherwise
+     */
     @Override
     public boolean preferencesExist() {
         return Files.exists(preferencesFile);
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Deletes the preferences file from the file system. This operation
+     * effectively resets all user preferences to their default values.
+     * The operation is idempotent - it won't fail if the file doesn't exist.</p>
+     * 
+     * @throws PreferencesException if there's an error deleting the preferences file
+     */
     @Override
     public void clearPreferences() throws PreferencesException {
         try {
@@ -134,7 +243,15 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Parse properties into UserPreferences object
+     * Parses Java Properties into a UserPreferences object.
+     * 
+     * <p>This method performs comprehensive parsing and validation of all
+     * preference values, applying sensible defaults for missing or invalid
+     * entries. It handles type conversion and range validation for numeric
+     * values and path validation for file system entries.</p>
+     * 
+     * @param properties The Properties object to parse
+     * @return A UserPreferences object with parsed and validated values
      */
     private UserPreferences parseProperties(Properties properties) {
         // Parse window settings
@@ -167,7 +284,15 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Convert UserPreferences to Properties
+     * Converts a UserPreferences object to Java Properties format.
+     * 
+     * <p>This method serializes all preference values to string format
+     * suitable for storage in a Java Properties file. It handles null
+     * values appropriately and ensures all numeric values are formatted
+     * consistently.</p>
+     * 
+     * @param preferences The UserPreferences object to convert
+     * @param properties The Properties object to populate
      */
     private void convertToProperties(UserPreferences preferences, Properties properties) {
         UserPreferences.WindowSettings windowSettings = preferences.getWindowSettings();
@@ -186,7 +311,16 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Parse double property with default value
+     * Parses a double property with default value and error handling.
+     * 
+     * <p>This method attempts to parse a double value from the properties,
+     * applying the default value if the property is missing or invalid.
+     * It logs warnings for invalid values to help with debugging.</p>
+     * 
+     * @param properties The Properties object to read from
+     * @param key The property key to parse
+     * @param defaultValue The default value to use if parsing fails
+     * @return The parsed double value or the default value
      */
     private double parseDouble(Properties properties, String key, double defaultValue) {
         String value = properties.getProperty(key);
@@ -203,7 +337,16 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Parse boolean property with default value
+     * Parses a boolean property with default value and error handling.
+     * 
+     * <p>This method attempts to parse a boolean value from the properties,
+     * applying the default value if the property is missing or invalid.
+     * It accepts "true" (case-insensitive) as true, everything else as false.</p>
+     * 
+     * @param properties The Properties object to read from
+     * @param key The property key to parse
+     * @param defaultValue The default value to use if parsing fails
+     * @return The parsed boolean value or the default value
      */
     private boolean parseBoolean(Properties properties, String key, boolean defaultValue) {
         String value = properties.getProperty(key);
@@ -215,31 +358,45 @@ public class PropertiesUserPreferencesAdapter implements UserPreferencesPort {
     }
     
     /**
-     * Get the preferences file path (for debugging/testing)
+     * Gets the full path to the preferences file.
+     * 
+     * <p>This method is useful for debugging and displaying the preferences
+     * file location to the user.</p>
+     * 
+     * @return Path to the preferences file
      */
     public Path getPreferencesFilePath() {
         return preferencesFile;
     }
     
     /**
-     * Get the application data directory path (for debugging/testing)
+     * Gets the application data directory path.
+     * 
+     * <p>This method returns the platform-specific directory where the
+     * application stores its data files.</p>
+     * 
+     * @return Path to the application data directory
      */
     public Path getApplicationDataDirectoryPath() {
         return preferencesFile.getParent();
     }
     
     /**
-     * Get a description of where preferences are stored for the current platform
+     * Gets a human-readable description of the storage location.
+     * 
+     * <p>This method provides a user-friendly description of where
+     * preferences are stored, suitable for display in the user interface.</p>
+     * 
+     * @return Human-readable storage location description
      */
     public String getStorageLocationDescription() {
         String osName = System.getProperty("os.name").toLowerCase();
-        
         if (osName.contains("win")) {
-            return "Windows AppData Roaming folder (%APPDATA%\\FF8MagicCreator)";
+            return "Windows Application Data (%APPDATA%)";
         } else if (osName.contains("mac")) {
-            return "macOS Application Support folder (~/Library/Application Support/FF8MagicCreator)";
+            return "macOS Application Support";
         } else {
-            return "Linux/Unix config folder (~/.config/ff8magic-creator or $XDG_CONFIG_HOME/ff8magic-creator)";
+            return "Linux/Unix Configuration Directory";
         }
     }
 } 

@@ -176,6 +176,7 @@ Proper handling of all 48 FF8 status effects with exact binary preservation.
 ## 📚 Documentation
 
 - **[User Guide](FF8_Magic_Creator_User_Guide.md)**: Complete usage instructions
+- **[Contributing Guide](CONTRIBUTING.md)**: Development standards and guidelines
 - **[Architecture](archi.md)**: Technical architecture details
 - **[JavaFX Setup](JavaFX.md)**: JavaFX configuration and setup
 - **[Editor Documentation](FF8_Magic_Editor_Documentation.md)**: Editor-specific features
@@ -193,11 +194,23 @@ Proper handling of all 48 FF8 status effects with exact binary preservation.
 
 ## 🤝 Contributing
 
+We welcome contributions from the community! Please read our **[Contributing Guide](CONTRIBUTING.md)** for detailed information about:
+
+- 🚀 **Modern Java 21** features and best practices
+- 🔧 **Lombok** usage guidelines
+- 🏗️ **Architecture** principles and layer boundaries
+- 🧪 **Testing** standards and frameworks
+- 📚 **Documentation** requirements
+
+### Quick Start for Contributors
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Follow the [Contributing Guide](CONTRIBUTING.md) for development standards
+4. Write tests and update documentation
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
 ## 📄 License
 

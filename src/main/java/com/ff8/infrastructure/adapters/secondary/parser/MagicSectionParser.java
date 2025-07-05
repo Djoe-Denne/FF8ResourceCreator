@@ -13,8 +13,51 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * Strategy implementation for parsing the Magic section of the FF8 kernel.bin file.
- * Handles parsing and serialization of spell/magic data including stats, effects, and junction information.
+ * Strategy implementation for parsing the Magic section of FF8 kernel.bin files.
+ * 
+ * <p>This class implements the {@link SectionParserStrategy} interface to handle
+ * the complex binary parsing and serialization of magic/spell data from Final Fantasy VIII
+ * kernel.bin files. It provides precise byte-level parsing while maintaining exact
+ * binary format compatibility for round-trip operations.</p>
+ * 
+ * <p>Key features:</p>
+ * <ul>
+ *   <li>Exact 60-byte magic structure parsing and serialization</li>
+ *   <li>48-bit status effect handling with proper bit manipulation</li>
+ *   <li>String extraction and Caesar cipher decoding for spell names</li>
+ *   <li>Junction system data parsing (stats, elements, status effects)</li>
+ *   <li>Guardian Force compatibility matrix handling</li>
+ *   <li>Comprehensive validation and error handling</li>
+ * </ul>
+ * 
+ * <p>Binary Format Details:</p>
+ * <ul>
+ *   <li><strong>Magic Structure Size:</strong> 60 bytes (0x3C)</li>
+ *   <li><strong>Standard Section Offset:</strong> 0x021C in kernel.bin</li>
+ *   <li><strong>Expected Magic Count:</strong> 56 entries</li>
+ *   <li><strong>String Section Offset:</strong> 0x5188 for spell names and descriptions</li>
+ * </ul>
+ * 
+ * <p>The parser handles all aspects of FF8's magic system including:</p>
+ * <ul>
+ *   <li>Attack types and elemental attributes</li>
+ *   <li>Status effects (attack and defense) with 48-bit precision</li>
+ *   <li>Junction stat bonuses for character enhancement</li>
+ *   <li>Target selection and attack behavior flags</li>
+ *   <li>GF compatibility matrices for summoning restrictions</li>
+ *   <li>Multi-language string data with Caesar cipher decoding</li>
+ * </ul>
+ * 
+ * <p>Usage within the strategy pattern:</p>
+ * <pre>{@code
+ * MagicSectionParser parser = new MagicSectionParser();
+ * MagicData magic = parser.parseItem(kernelBytes, offset, index);
+ * byte[] serialized = parser.serializeItem(magic);
+ * }</pre>
+ * 
+ * @author FF8 Magic Creator Team
+ * @version 1.0
+ * @since 1.0
  */
 public class MagicSectionParser implements SectionParserStrategy<MagicData> {
     private static final Logger logger = Logger.getLogger(MagicSectionParser.class.getName());
@@ -24,11 +67,34 @@ public class MagicSectionParser implements SectionParserStrategy<MagicData> {
     private static final int EXPECTED_MAGIC_COUNT = 56;
     private static final int STRING_SECTION_OFFSET = 0x5188; // Base offset for string data
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public SectionType getSectionType() {
         return SectionType.MAGIC;
     }
     
+    /**
+     * {@inheritDoc}
+     * 
+     * <p>Parses a single magic data structure from the binary data at the specified offset.
+     * This method performs comprehensive parsing of all 60 bytes of magic data including:</p>
+     * <ul>
+     *   <li>Text pointers and string extraction with Caesar cipher decoding</li>
+     *   <li>Attack properties (type, power, element, hit count)</li>
+     *   <li>Status effects (48-bit attack and defense)</li>
+     *   <li>Junction data (stats, elements, status effects)</li>
+     *   <li>Guardian Force compatibility matrix</li>
+     *   <li>Target selection and behavior flags</li>
+     * </ul>
+     * 
+     * @param binaryData The complete binary data array
+     * @param offset The offset within the binary data where magic structure begins
+     * @param index The kernel index (position) of this magic entry
+     * @return Fully parsed MagicData object with all properties populated
+     * @throws BinaryParseException if parsing fails due to invalid data or offset
+     */
     @Override
     public MagicData parseItem(byte[] binaryData, int offset, int index) throws BinaryParseException {
         if (binaryData == null) {

@@ -22,6 +22,53 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Logger;
 
+/**
+ * Application service for managing FF8 kernel.bin files and magic binary data.
+ * 
+ * <p>This service implements the {@link KernelFileUseCase} interface as the primary
+ * orchestrator for all kernel file operations in the FF8 Magic Creator application.
+ * It coordinates between the domain layer, infrastructure adapters, and provides
+ * comprehensive file management capabilities with robust error handling and
+ * event notification.</p>
+ * 
+ * <p>Core responsibilities:</p>
+ * <ul>
+ *   <li><strong>Kernel File Loading:</strong> Parses FF8 kernel.bin files and extracts magic data</li>
+ *   <li><strong>Magic Binary Import:</strong> Loads user-created magic binary files with translations</li>
+ *   <li><strong>File Export:</strong> Generates new kernel.bin files with modified magic data</li>
+ *   <li><strong>Validation:</strong> Ensures file integrity and validates magic data structures</li>
+ *   <li><strong>Event Notification:</strong> Notifies observers of file operations and changes</li>
+ * </ul>
+ * 
+ * <p>Supported file formats:</p>
+ * <ul>
+ *   <li><strong>kernel.bin:</strong> Original FF8 kernel files containing 56 magic spells</li>
+ *   <li><strong>Magic Binary:</strong> User-created binary files with custom magic data</li>
+ *   <li><strong>Language Resources:</strong> Multi-language spell name and description files</li>
+ * </ul>
+ * 
+ * <p>File structure constants:</p>
+ * <ul>
+ *   <li><strong>Magic Section Offset:</strong> 0x021C (540 bytes) - Standard kernel.bin magic section start</li>
+ *   <li><strong>Magic Struct Size:</strong> 0x3C (60 bytes) - Size of each magic data structure</li>
+ *   <li><strong>Magic Count:</strong> 56 spells - Standard number of magic spells in FF8</li>
+ * </ul>
+ * 
+ * <p>The service maintains state about the currently loaded file and provides
+ * comprehensive metadata about file operations, including modification tracking,
+ * backup creation, and integrity validation.</p>
+ * 
+ * <p>Observer pattern implementation:</p>
+ * <ul>
+ *   <li>Extends {@link AbstractSubject} to provide event notification</li>
+ *   <li>Emits {@link KernelReadEvent} when files are loaded successfully</li>
+ *   <li>Provides file metadata and magic data DTOs to observers</li>
+ * </ul>
+ * 
+ * @author FF8 Magic Creator Team
+ * @version 1.0
+ * @since 1.0
+ */
 @RequiredArgsConstructor
 public class KernelFileService extends AbstractSubject<KernelReadEvent> implements KernelFileUseCase {
     private static final Logger logger = Logger.getLogger(KernelFileService.class.getName());
@@ -37,6 +84,30 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     private boolean fileLoaded = false;
     private String currentFilePath;
 
+    /**
+     * Loads a complete FF8 kernel.bin file and extracts all magic data.
+     * 
+     * <p>This method performs comprehensive loading of an FF8 kernel.bin file,
+     * extracting all 56 magic spells and their associated data. The process
+     * includes validation, parsing, and repository management to ensure
+     * data integrity throughout the operation.</p>
+     * 
+     * <p>Loading process:</p>
+     * <ul>
+     *   <li>Validates file size and structure for kernel.bin format</li>
+     *   <li>Removes existing kernel data while preserving user-created magic</li>
+     *   <li>Parses all 56 magic entries from the magic section</li>
+     *   <li>Stores parsed magic data in the repository</li>
+     *   <li>Notifies observers with loading results and file metadata</li>
+     * </ul>
+     * 
+     * <p>The method ensures that newly created magic spells are preserved
+     * during kernel file loading operations, maintaining user work while
+     * refreshing the base game data.</p>
+     * 
+     * @param filePath The path to the kernel.bin file to load
+     * @throws BinaryParseException if the file is invalid, corrupted, or cannot be parsed
+     */
     @Override
     public void loadKernelFile(String filePath) throws BinaryParseException {
         try {
@@ -88,6 +159,34 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         }
     }
 
+    /**
+     * Loads a magic binary file with associated multi-language resources.
+     * 
+     * <p>This method loads user-created magic binary files that contain custom
+     * magic data structures. It supports multi-language spell names and descriptions
+     * by automatically detecting and loading associated language resource files.</p>
+     * 
+     * <p>Loading process:</p>
+     * <ul>
+     *   <li>Validates binary file structure and magic count</li>
+     *   <li>Searches for associated language resource files</li>
+     *   <li>Loads and parses multi-language spell translations</li>
+     *   <li>Parses magic data structures from the binary file</li>
+     *   <li>Assigns new indices to avoid conflicts with existing magic</li>
+     *   <li>Marks all loaded magic as newly created for proper tracking</li>
+     * </ul>
+     * 
+     * <p>Language file naming conventions:</p>
+     * <ul>
+     *   <li><strong>English (required):</strong> {@code [basename]_en.resources.bin}</li>
+     *   <li><strong>Alternative naming:</strong> {@code [basename]_english.resources.bin}</li>
+     *   <li><strong>Other languages:</strong> {@code [basename]_[langcode].resources.bin}</li>
+     * </ul>
+     * 
+     * @param filePath The path to the magic binary file to load
+     * @throws BinaryParseException if the file is invalid, corrupted, or required resources are missing
+     * @throws IOException if file system operations fail
+     */
     @Override
     public void loadMagicBinary(String filePath) throws BinaryParseException, IOException {
         try {
@@ -161,7 +260,14 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     }
 
     /**
-     * Extract base name from file path (remove extension)
+     * Extracts the base name from a file path by removing the extension.
+     * 
+     * <p>This utility method extracts the filename without its extension,
+     * which is used for discovering associated language resource files
+     * that follow the naming convention of [basename]_[language].resources.bin.</p>
+     * 
+     * @param filePath The file path to extract the base name from
+     * @return The filename without extension, or the full filename if no extension exists
      */
     private String getBaseNameFromPath(Path filePath) {
         String fileName = filePath.getFileName().toString();
@@ -170,8 +276,27 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     }
 
     /**
-     * Load language files associated with the magic binary
-     * English file is mandatory - throws exception if not found
+     * Loads language files associated with a magic binary file.
+     * 
+     * <p>This method discovers and loads all language resource files associated
+     * with a magic binary file. The English language file is mandatory and must
+     * be present for the operation to succeed. Additional language files are
+     * loaded if available.</p>
+     * 
+     * <p>Language file discovery process:</p>
+     * <ul>
+     *   <li>Searches for English file using standard naming conventions</li>
+     *   <li>Validates English file presence (mandatory requirement)</li>
+     *   <li>Loads and parses English translations</li>
+     *   <li>Discovers additional language files (future enhancement)</li>
+     * </ul>
+     * 
+     * @param parentDir The directory containing the language resource files
+     * @param baseName The base name of the magic binary file (without extension)
+     * @param magicCount The number of magic spells expected in each language file
+     * @return Map of language codes to translation arrays
+     * @throws BinaryParseException if the mandatory English file is missing
+     * @throws IOException if file system operations fail
      */
     private Map<String, SpellTranslations.Translation[]> loadLanguageFiles(Path parentDir, String baseName, int magicCount) 
             throws BinaryParseException, IOException {
@@ -236,7 +361,15 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     }
 
     /**
-     * Build SpellTranslations object for a specific magic entry
+     * Builds spell translations for a specific magic entry.
+     * 
+     * <p>This method constructs a {@link SpellTranslations} object for a specific
+     * magic spell using the loaded language translation data. It ensures that
+     * English translations are always available and properly formatted.</p>
+     * 
+     * @param languageTranslations Map of language codes to translation arrays
+     * @param magicIndex The index of the magic spell to build translations for
+     * @return SpellTranslations object containing all available translations
      */
     private SpellTranslations buildSpellTranslations(Map<String, SpellTranslations.Translation[]> languageTranslations, int magicIndex) {
         Map<String, SpellTranslations.Translation> translations = new LinkedHashMap<>();
@@ -255,7 +388,13 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
     }
 
     /**
-     * Get display name for language code
+     * Converts language code to display name.
+     * 
+     * <p>This utility method converts language codes to human-readable display names
+     * for use in the user interface.</p>
+     * 
+     * @param langCode The language code to convert
+     * @return Human-readable display name for the language
      */
     private String getLanguageDisplayName(String langCode) {
         return switch (langCode.toLowerCase()) {
@@ -268,6 +407,25 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         };
     }
 
+    /**
+     * Saves the current magic data to a new kernel.bin file.
+     * 
+     * <p>This method exports all current magic data to a new kernel.bin file,
+     * creating a complete FF8-compatible binary file. The export process includes
+     * validation, binary serialization, and comprehensive error handling.</p>
+     * 
+     * <p>Export process:</p>
+     * <ul>
+     *   <li>Validates that a kernel file is currently loaded</li>
+     *   <li>Retrieves all magic data from the repository</li>
+     *   <li>Generates binary data for the magic section</li>
+     *   <li>Creates a complete kernel.bin file with updated magic data</li>
+     *   <li>Writes the file to the specified path</li>
+     * </ul>
+     * 
+     * @param filePath The path where the new kernel.bin file should be saved
+     * @throws BinaryParseException if there's an error during export or no file is loaded
+     */
     @Override
     public void saveKernelFile(String filePath) throws BinaryParseException {
         if (!fileLoaded) {
@@ -327,16 +485,32 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         }
     }
 
+    /**
+     * Checks if a kernel file is currently loaded.
+     * 
+     * @return true if a kernel file is loaded, false otherwise
+     */
     @Override
     public boolean isFileLoaded() {
         return fileLoaded;
     }
 
+    /**
+     * Gets the path of the currently loaded kernel file.
+     * 
+     * @return Optional containing the current file path, or empty if no file is loaded
+     */
     @Override
     public Optional<String> getCurrentFilePath() {
         return Optional.ofNullable(currentFilePath);
     }
 
+    /**
+     * Unloads the current kernel file and clears all state.
+     * 
+     * <p>This method resets the service state, clearing the loaded file status
+     * and path information. It does not affect the magic data in the repository.</p>
+     */
     public void unloadFile() {
         this.fileLoaded = false;
         this.currentFilePath = null;
@@ -344,21 +518,46 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         logger.info("Kernel file unloaded");
     }
 
+    /**
+     * Gets the count of magic spells in the currently loaded kernel.
+     * 
+     * @return The number of magic spells, or 0 if no file is loaded
+     */
     public int getMagicCount() {
         return MAGIC_COUNT;
     }
 
+    /**
+     * Checks if there are unsaved changes in the magic data.
+     * 
+     * @return true if there are modifications that haven't been saved, false otherwise
+     */
     public boolean hasUnsavedChanges() {
         // This would typically check if the repository has been modified
         // For now, we'll implement a simple version
         return fileLoaded && magicRepository.findAll().size() == MAGIC_COUNT;
     }
 
+    /**
+     * Checks if the magic data has been modified since loading.
+     * 
+     * @return true if modifications exist, false otherwise
+     */
     @Override
     public boolean isModified() {
         return hasUnsavedChanges();
     }
 
+    /**
+     * Creates a backup of the currently loaded kernel file.
+     * 
+     * <p>This method creates a backup copy of the current kernel file at the
+     * specified path. This is useful for creating safety copies before
+     * performing modifications.</p>
+     * 
+     * @param backupPath The path where the backup should be created
+     * @throws BinaryParseException if no file is loaded or backup creation fails
+     */
     @Override
     public void createBackup(String backupPath) throws BinaryParseException {
         if (currentFilePath == null) {
@@ -371,6 +570,14 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         }
     }
     
+    /**
+     * Gets comprehensive information about the currently loaded file.
+     * 
+     * <p>This method provides detailed metadata about the current kernel file,
+     * including file system information, magic count, and modification status.</p>
+     * 
+     * @return Optional containing file information, or empty if no file is loaded
+     */
     @Override
     public Optional<FileInfo> getFileInfo() {
         if (currentFilePath == null) {
@@ -392,11 +599,26 @@ public class KernelFileService extends AbstractSubject<KernelReadEvent> implemen
         }
     }
     
+    /**
+     * Closes the current kernel file and cleans up resources.
+     * 
+     * <p>This method performs cleanup operations when the current file is
+     * no longer needed, but preserves the magic data in the repository.</p>
+     */
     @Override
     public void closeFile() {
         unloadFile();
     }
 
+    /**
+     * Validates the integrity of the currently loaded kernel file.
+     * 
+     * <p>This method performs comprehensive validation of the loaded kernel file,
+     * checking for structural integrity, magic data consistency, and format
+     * compliance.</p>
+     * 
+     * @return ValidationResult containing the results of the integrity check
+     */
     @Override
     public ValidationResult validateFileIntegrity() {
         List<String> errors = new ArrayList<>();

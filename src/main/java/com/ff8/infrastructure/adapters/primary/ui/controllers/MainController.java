@@ -23,8 +23,30 @@ import java.nio.file.Path;
 import java.util.ResourceBundle;
 
 /**
- * Main controller for the FF8 Magic Editor application.
- * Coordinates the main window and handles file operations.
+ * Primary UI controller for the FF8 Magic Editor application.
+ * 
+ * <p>This controller serves as the main coordinator for the application's user interface,
+ * implementing the hexagonal architecture pattern as a Primary Adapter. It handles
+ * file operations, menu actions, and coordinates between child controllers and
+ * application use cases.</p>
+ * 
+ * <p>Key responsibilities:</p>
+ * <ul>
+ *   <li>Coordinate main window operations and lifecycle</li>
+ *   <li>Handle file loading and saving operations</li>
+ *   <li>Manage menu actions and user preferences</li>
+ *   <li>Coordinate between child controllers (tabs, magic list)</li>
+ *   <li>Implement observer pattern for real-time UI updates</li>
+ *   <li>Handle error display and user feedback</li>
+ * </ul>
+ * 
+ * <p>The controller integrates with the application layer through use case interfaces,
+ * maintaining proper separation of concerns and ensuring the UI remains decoupled
+ * from business logic.</p>
+ * 
+ * @author FF8 Magic Creator Team
+ * @version 1.0
+ * @since 1.0
  */
 public class MainController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
@@ -62,6 +84,15 @@ public class MainController implements Initializable {
     // Current file information
     private File currentFile;
     
+    /**
+     * Constructor for dependency injection.
+     * 
+     * <p>Initializes the controller with required application services and sets up
+     * the observer pattern for automatic UI updates. The constructor establishes
+     * connections between the UI model and application services.</p>
+     * 
+     * @param config the application configuration containing injected dependencies
+     */
     public MainController(ApplicationConfig config) {
         this.kernelFileUseCase = config.getKernelFileUseCase();
         this.magicEditorUseCase = config.getMagicEditorUseCase();
@@ -96,6 +127,16 @@ public class MainController implements Initializable {
         logger.info("MainController initialized");
     }
     
+    /**
+     * Initializes the controller after FXML loading.
+     * 
+     * <p>This method is called automatically by JavaFX after the FXML file has been
+     * loaded and all @FXML annotated fields have been injected. It sets up the
+     * UI components, menu actions, and child controllers.</p>
+     * 
+     * @param location the location used to resolve relative paths for the root object
+     * @param resources the resources used to localize the root object
+     */
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         setupMenuActions();
@@ -111,7 +152,11 @@ public class MainController implements Initializable {
     }
     
     /**
-     * Set up child controllers after FXML loading
+     * Sets up child controllers after FXML loading.
+     * 
+     * <p>Establishes connections between child controllers and their required
+     * models and parent references. This ensures proper coordination between
+     * the main controller and its child components.</p>
      */
     private void setupChildControllers() {
         // Connect models and parent references
@@ -139,6 +184,12 @@ public class MainController implements Initializable {
         logger.info("Child controllers configured");
     }
     
+    /**
+     * Sets up menu actions and keyboard shortcuts.
+     * 
+     * <p>Configures event handlers for all menu items and establishes their
+     * enabled/disabled states based on application state.</p>
+     */
     private void setupMenuActions() {
         openKernelMenuItem.setOnAction(e -> openKernelFile());
         openMagicBinaryMenuItem.setOnAction(e -> openMagicBinary());
@@ -154,11 +205,23 @@ public class MainController implements Initializable {
         exportMenuItem.setDisable(!localizedExportUseCase.hasNewlyCreatedMagic());
     }
     
+    /**
+     * Sets up the status bar with initial state.
+     * 
+     * <p>Configures the progress bar visibility and initial status message.</p>
+     */
     private void setupStatusBar() {
         progressBar.setVisible(false);
         statusLabel.setText("Ready - Please open a kernel.bin file or load magic binary");
     }
     
+    /**
+     * Handles the "Open Kernel File" menu action.
+     * 
+     * <p>Displays a file chooser dialog for selecting kernel.bin files and
+     * initiates the file loading process. Uses user preferences to set the
+     * initial directory.</p>
+     */
     @FXML
     private void openKernelFile() {
         FileChooser fileChooser = new FileChooser();
@@ -185,6 +248,12 @@ public class MainController implements Initializable {
         }
     }
     
+    /**
+     * Handles the "Open Magic Binary" menu action.
+     * 
+     * <p>Displays a file chooser dialog for selecting magic binary files and
+     * initiates the file loading process.</p>
+     */
     @FXML
     private void openMagicBinary() {
         FileChooser fileChooser = new FileChooser();
@@ -211,64 +280,59 @@ public class MainController implements Initializable {
         }
     }
     
+    /**
+     * Handles the "New Magic" menu action.
+     * 
+     * <p>Displays a dialog for creating a new magic spell, validates the input,
+     * and creates the new spell using the application services.</p>
+     */
     @FXML
     private void createNewMagic() {
-        // Show dialog to get spell name
-        TextInputDialog dialog = new TextInputDialog("New Spell");
+        TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Create New Magic");
         dialog.setHeaderText("Create a new magic spell");
         dialog.setContentText("Enter spell name:");
         
+        // Show dialog and wait for user input
         dialog.showAndWait().ifPresent(spellName -> {
             if (spellName.trim().isEmpty()) {
-                showError("Invalid spell name", new IllegalArgumentException("Spell name cannot be empty"));
+                showError("Spell name cannot be empty", null);
                 return;
             }
             
-            try {
-                Task<Void> createTask = new Task<>() {
-                    @Override
-                    protected Void call() throws Exception {
-                        updateMessage("Creating new magic...");
-                        updateProgress(0, 1);
-                        
-                        magicEditorUseCase.createNewMagic(spellName.trim());
-                        updateProgress(1, 1);
-                        
-                        javafx.application.Platform.runLater(() -> {
-                            updateUIState(); // Update export menu state
-                            updateMessage("New magic created: " + spellName.trim());
-                        });
-                        
-                        return null;
-                    }
-                    
-                    @Override
-                    protected void failed() {
-                        javafx.application.Platform.runLater(() -> {
-                            showError("Failed to create new magic", getException());
-                            updateMessage("Failed to create new magic");
-                        });
-                    }
-                };
+            // Create new magic in a background task
+            Task<Void> createTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    updateMessage("Creating new magic spell...");
+                    magicEditorUseCase.createNewMagic(spellName.trim());
+                    return null;
+                }
                 
-                // Bind progress and status using the same pattern as other operations
-                progressBar.progressProperty().bind(createTask.progressProperty());
-                statusLabel.textProperty().bind(createTask.messageProperty());
-                progressBar.visibleProperty().bind(createTask.runningProperty());
+                @Override
+                protected void succeeded() {
+                    updateMessage("New magic spell created successfully");
+                    updateUIState();
+                }
                 
-                // Run the task
-                Thread createThread = new Thread(createTask);
-                createThread.setDaemon(true);
-                createThread.start();
-                
-                logger.info("Started new magic creation task for: {}", spellName.trim());
-                
-            } catch (Exception e) {
-                statusLabel.setText("Error creating magic");
-                showError("Failed to create new magic", e);
-                logger.error("Error creating new magic: {}", spellName.trim(), e);
-            }
+                @Override
+                protected void failed() {
+                    updateMessage("Failed to create new magic spell");
+                    Throwable exception = getException();
+                    logger.error("Failed to create new magic spell", exception);
+                    showError("Failed to create new magic spell: " + exception.getMessage(), exception);
+                }
+            };
+            
+            // Bind progress bar to task
+            progressBar.progressProperty().bind(createTask.progressProperty());
+            statusLabel.textProperty().bind(createTask.messageProperty());
+            progressBar.setVisible(true);
+            
+            // Run task in background thread
+            Thread thread = new Thread(createTask);
+            thread.setDaemon(true);
+            thread.start();
         });
     }
     
@@ -487,8 +551,6 @@ public class MainController implements Initializable {
         loadThread.start();
     }
     
-
-    
     private void updateUIState() {
         // Export is enabled if there are newly created magic spells
         if (exportMenuItem != null) {
@@ -529,8 +591,6 @@ public class MainController implements Initializable {
         }
         return (Stage) menuBar.getScene().getWindow();
     }
-    
-
     
     /**
      * Get the magic list model
