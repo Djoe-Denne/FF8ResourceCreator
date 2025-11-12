@@ -176,6 +176,7 @@ Proper handling of all 48 FF8 status effects with exact binary preservation.
 ## 📚 Documentation
 
 - **[User Guide](FF8_Magic_Creator_User_Guide.md)**: Complete usage instructions
+- **[Faithful User Documentation](docs/FF8_User_Documentation.md)**: Combined editor and injector workflow guide
 - **[Contributing Guide](CONTRIBUTING.md)**: Development standards and guidelines
 - **[Architecture](archi.md)**: Technical architecture details
 - **[JavaFX Setup](JavaFX.md)**: JavaFX configuration and setup
